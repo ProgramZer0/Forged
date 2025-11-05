@@ -79,7 +79,7 @@ public class CameraMovements : MonoBehaviour
                         heldObject = hit.rigidbody;
 
                         heldObject.useGravity = false;
-                        heldObject.drag = 10;
+                        heldObject.linearDamping = 10;
                     }
                 }
                 catch 
@@ -95,7 +95,7 @@ public class CameraMovements : MonoBehaviour
                 try
                 {
                     FindObjectOfType<Controls>().GetAnimator().SetBool("Interacting", false);
-                    heldObject.drag = 1;
+                    heldObject.linearDamping = 1;
                     heldObject.useGravity = true;
                 }
                 catch {
