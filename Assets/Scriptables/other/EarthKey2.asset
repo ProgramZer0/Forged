@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b83ad78a2162b6f498fabbd5074235a0, type: 3}
+  m_Name: EarthKey2
+  m_EditorClassIdentifier: 
+  type: 6
+  itemID: 101
+  itemName: Earth Key 2
+  itemDescription: This one looks like a fork?
+  cost: 
+  nextItem: {fileID: 0}
+  itemSprite: {fileID: 0}
+  model: {fileID: 5698638348341526842, guid: cee4deb79a78a1341b9d9d781d49c1c8, type: 3}
+  CanGoInSmeltery: 0
+  impuritySmash: 0
+  heatLevel: 0
+  heatStage: 0

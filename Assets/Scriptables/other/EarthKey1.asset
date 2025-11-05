@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b83ad78a2162b6f498fabbd5074235a0, type: 3}
+  m_Name: EarthKey1
+  m_EditorClassIdentifier: 
+  type: 6
+  itemID: 101
+  itemName: Earth Key 1
+  itemDescription: It looks kinda like a broom, weird
+  cost: 
+  nextItem: {fileID: 0}
+  itemSprite: {fileID: 0}
+  model: {fileID: 11344309151289395, guid: 4a0ca16adab61bc4c8355332d7ef066b, type: 3}
+  CanGoInSmeltery: 0
+  impuritySmash: 0
+  heatLevel: 0
+  heatStage: 0

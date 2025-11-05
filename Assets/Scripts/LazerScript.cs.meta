@@ -1,0 +1,13 @@
+fileFormatVersion: 2
+guid: f232b712060c99745b646be8fb7452df
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - laserObj: {instanceID: 0}
+  - NullLaser: {instanceID: 0}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
