@@ -10,7 +10,7 @@ public class BloomAdd : MonoBehaviour
         try
         {
             Debug.Log(collision.transform.GetComponent<Item>().item.name);
-            if (FindObjectOfType<Bloomery>().CheckAndAddItem(collision.transform.GetComponent<Item>().item))
+            if (FindFirstObjectByType<Bloomery>().CheckAndAddItem(collision.transform.GetComponent<Item>().item))
             {
                 Destroy(collision.gameObject);
             }

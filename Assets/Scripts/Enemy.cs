@@ -17,7 +17,7 @@ public class Enemy : MonoBehaviour
 
     public bool CanSeePlayer()
     {
-        return Physics.Raycast(gameObject.transform.position, (FindObjectOfType<Controls>().GetPlayerPos()), scriptable.ViewDistance);
+        return Physics.Raycast(gameObject.transform.position, (FindFirstObjectByType<Controls>().GetPlayerPos()), scriptable.ViewDistance);
     }
 
     public void DetectPlayer()

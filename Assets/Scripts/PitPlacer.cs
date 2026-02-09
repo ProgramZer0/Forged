@@ -8,9 +8,9 @@ public class PitPlacer : MonoBehaviour
     {
         if (collision.transform.GetComponent<Item>().item.name.Contains("Wood"))
         {
-            if (FindObjectOfType<FirePit>().CanAddCheck())
+            if (FindFirstObjectByType<FirePit>().CanAddCheck())
             {
-                FindObjectOfType<FirePit>().addWoodenLog();
+                FindFirstObjectByType<FirePit>().addWoodenLog();
                 Destroy(collision.gameObject);
             }
             else

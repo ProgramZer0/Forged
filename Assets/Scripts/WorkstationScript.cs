@@ -31,6 +31,10 @@ public class WorkstationScript : MonoBehaviour
     [SerializeField] private GameObject Tongs;
     [SerializeField] private GameObject TongPlacement;
 
+    [SerializeField] private Controls playerController;
+    [SerializeField] private Smeltery smelteryScript;
+    [SerializeField] private AnvilPlaces anvilPlace;
+
     [SerializeField] private LayerMask itemMask;
 
     private TextMesh display;
@@ -66,10 +70,10 @@ public class WorkstationScript : MonoBehaviour
 
     void Update()
     {
-        if (Vector3.Distance(gameObject.transform.position, FindObjectOfType<Controls>().GetPlayerPos()) < rangeInteraction)
+        if (Vector3.Distance(gameObject.transform.position, playerController.GetPlayerPos()) < rangeInteraction)
         {
             RaycastHit hit;
-            if (Physics.Raycast(gameObject.transform.position, (FindObjectOfType<Controls>().GetPlayerPos() - transform.position), out hit, rangeInteraction))
+            if (Physics.Raycast(gameObject.transform.position, (playerController.GetPlayerPos() - transform.position), out hit, rangeInteraction))
             {
                 //Debug.Log("hit " + hit.collider.gameObject.name);
                 if (hit.collider.tag == "Player")
@@ -81,8 +85,8 @@ public class WorkstationScript : MonoBehaviour
 
                     if (Input.GetKeyDown(KeyCode.F))
                     {
-                        FindObjectOfType<Controls>().setLockedMovement(true);
-                        FindObjectOfType<Controls>().SetCutScenePlayerView();
+                        playerController.setLockedMovement(true);
+                        playerController.SetCutScenePlayerView();
                         inStation = true;
                         Hammer.SetActive(true);
                         Tongs.SetActive(true);
@@ -236,7 +240,7 @@ public class WorkstationScript : MonoBehaviour
                 Destroy(objOnTongs);
                 objOnTongs = null;
 
-                FindObjectOfType<Smeltery>().changedItemOnTongs();
+                smelteryScript.changedItemOnTongs();
                 GameObject o = UnityEngine.Object.Instantiate(itemOnTongs.model, AnvilPos.transform.position, Quaternion.Euler(0, 0, 0));
                 itemOnAnvil = itemOnTongs;
                 itemOnTongs = Emtpy;
@@ -247,7 +251,7 @@ public class WorkstationScript : MonoBehaviour
 
     private void changeItem(Items nextItem)
     {
-        Destroy(FindObjectOfType<AnvilPlaces>().objonAnvil);
+        Destroy(anvilPlace.objonAnvil);
         GameObject o = UnityEngine.Object.Instantiate(nextItem.model, AnvilPos.transform.position, Quaternion.Euler(0, 0, 0));
     }
 
@@ -279,8 +283,8 @@ public class WorkstationScript : MonoBehaviour
         objs.transform.SetParent(TongPlacement.transform);
         objOnTongs = objs;
 
-        FindObjectOfType<Smeltery>().changedItemOnTongs();
-        Destroy(FindObjectOfType<AnvilPlaces>().objonAnvil);
+        smelteryScript.changedItemOnTongs();
+        Destroy(anvilPlace.objonAnvil);
         itemOnTongs = itemOnAnvil;
         itemOnAnvil = Emtpy;
     }

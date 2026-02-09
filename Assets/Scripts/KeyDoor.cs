@@ -12,7 +12,7 @@ public class KeyDoor : MonoBehaviour
         if(collision.gameObject.GetComponent<Item>().item == key)
         {
             Debug.Log("Door " + DoorNumber + " has key");
-            FindObjectOfType<EarthPuzzle1>().setKeys(DoorNumber);
+            FindFirstObjectByType<EarthPuzzle1>().setKeys(DoorNumber);
             Destroy(collision.gameObject);
         }
     }

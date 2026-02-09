@@ -21,6 +21,8 @@ public class Smeltery : MonoBehaviour
     [SerializeField] private Color Stage3Color;
     [SerializeField] private Color Stage4Color;
 
+    [SerializeField] private WorkstationScript workstationScript;
+
     private int teirLevel;
     private int maxTemp;
     private int increasePerSec;
@@ -107,7 +109,7 @@ public class Smeltery : MonoBehaviour
             heatLight.intensity = 0;
         }
 
-        smeltItem = FindObjectOfType<WorkstationScript>().getItemOnTongs();
+        smeltItem = workstationScript.getItemOnTongs();
 
         if (heat >= smeltItem.heatLevel && inFire)
         {
@@ -129,37 +131,37 @@ public class Smeltery : MonoBehaviour
         switch (((int)timerOfStage))
         {
             case 0:
-                smeltItem = FindObjectOfType<WorkstationScript>().getItemOnTongs();
+                smeltItem = workstationScript.getItemOnTongs();
                 smeltItem.heatStage = 0;
-                FindObjectOfType<WorkstationScript>().setItemOnTongs(smeltItem);
+                workstationScript.setItemOnTongs(smeltItem);
                 heatUI.GetComponent<Image>().color = Stage0Color;
                 break;
             case 10:
-                smeltItem = FindObjectOfType<WorkstationScript>().getItemOnTongs();
+                smeltItem = workstationScript.getItemOnTongs();
                 smeltItem.heatStage = 1;
-                FindObjectOfType<WorkstationScript>().setItemOnTongs(smeltItem);
+                workstationScript.setItemOnTongs(smeltItem);
                 heatUI.GetComponent<Image>().color = Stage1Color;
                 break;
             case 15:
-                smeltItem = FindObjectOfType<WorkstationScript>().getItemOnTongs();
+                smeltItem = workstationScript.getItemOnTongs();
                 smeltItem.heatStage = 2;
-                FindObjectOfType<WorkstationScript>().setItemOnTongs(smeltItem);
+                workstationScript.setItemOnTongs(smeltItem);
                 heatUI.GetComponent<Image>().color = Stage2Color;
                 break;
             case 20:
-                smeltItem = FindObjectOfType<WorkstationScript>().getItemOnTongs();
+                smeltItem = workstationScript.getItemOnTongs();
                 smeltItem.heatStage = 3;
-                FindObjectOfType<WorkstationScript>().setItemOnTongs(smeltItem);
+                workstationScript.setItemOnTongs(smeltItem);
                 heatUI.GetComponent<Image>().color = Stage3Color;
                 break;
             case 30:
-                smeltItem = FindObjectOfType<WorkstationScript>().getItemOnTongs();
+                smeltItem = workstationScript.getItemOnTongs();
                 smeltItem.heatStage = 4;
-                FindObjectOfType<WorkstationScript>().setItemOnTongs(smeltItem);
+                workstationScript.setItemOnTongs(smeltItem);
                 heatUI.GetComponent<Image>().color = Stage4Color;
                 break;
             case 50:
-                FindObjectOfType<WorkstationScript>().setItemOnTongs(EmptyItem);
+                workstationScript.setItemOnTongs(EmptyItem);
                 break;
             default:
                 break;
@@ -192,6 +194,11 @@ public class Smeltery : MonoBehaviour
         //Debug.Log("this is the time: " + timer);
 
     }
+    [ContextMenu("add fuel")]
+    public void AddCharcoal()
+    {
+        charcoalTime += 100;
+    }
 
     private void FixedUpdate()
     {
@@ -209,6 +216,7 @@ public class Smeltery : MonoBehaviour
         //probs should put timers in here
     }
 
+    
     private bool CheckAddCharcoal(Items item)
     {
         if (item == CharItem)

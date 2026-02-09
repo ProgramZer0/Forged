@@ -8,7 +8,7 @@ public class ColiderFix : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        rigds = FindObjectOfType<Controls>().getGameObj();
+        rigds = FindFirstObjectByType<Controls>().getGameObj();
 
         //Debug.Log(collision.gameObject.name);
         if (collision.gameObject.name == rigds.name)
@@ -19,7 +19,7 @@ public class ColiderFix : MonoBehaviour
 
     private void OnCollisionStay(Collision collision)
     {
-        rigds = FindObjectOfType<Controls>().getGameObj();
+        rigds = FindFirstObjectByType<Controls>().getGameObj();
 
         //Debug.Log(collision.gameObject.name);
         if (collision.gameObject.name == rigds.name)
@@ -29,7 +29,7 @@ public class ColiderFix : MonoBehaviour
     }
     private void OnCollisionExit(Collision collision)
     {
-        rigds = FindObjectOfType<Controls>().getGameObj();
+        rigds = FindFirstObjectByType<Controls>().getGameObj();
 
         //Debug.Log(collision.gameObject.name);
         if (collision.gameObject.name == rigds.name)
