@@ -16,7 +16,7 @@ public class TreeUtils : MonoBehaviour
     {
         gameObject.transform.localScale =  new Vector3(0.02f, 0.02f, 0.02f);
         timerOn = true;
-        TreeMask = FindObjectOfType<TerrainUtils>().getTreeMask();
+        TreeMask = FindFirstObjectByType<TerrainUtils>().getTreeMask();
     }
 
     private void Update()

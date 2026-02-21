@@ -9,7 +9,7 @@ public class TurntoCam : MonoBehaviour
 
     void Start()
     {
-        main = FindObjectOfType<Controls>().getMainCamera();
+        main = FindFirstObjectByType<Controls>().getMainCamera();
     }
 
     // Update is called once per frame

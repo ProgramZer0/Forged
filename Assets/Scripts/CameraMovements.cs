@@ -11,8 +11,7 @@ public class CameraMovements : MonoBehaviour
     [SerializeField] private LayerMask ItemPickupLayer;
     [SerializeField] private GameObject PickUpObject;
     [SerializeField] private GameObject pickupPrompt;
-
-    private bool lockedMovement;
+    [SerializeField] private Controls PlayerControls;
 
     float xRotation;
     float yRotation;
@@ -42,7 +41,7 @@ public class CameraMovements : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (FindObjectOfType<Controls>().getHotbarSelected() == 0)
+        if (PlayerControls.getHotbarSelected() == 0)
         {
 
             RaycastHit hit;
@@ -94,7 +93,7 @@ public class CameraMovements : MonoBehaviour
                 }
                 try
                 {
-                    FindObjectOfType<Controls>().GetAnimator().SetBool("Interacting", false);
+                    PlayerControls.GetAnimator().SetBool("Interacting", false);
                     heldObject.linearDamping = 1;
                     heldObject.useGravity = true;
                 }
@@ -107,7 +106,7 @@ public class CameraMovements : MonoBehaviour
             if (heldObject)
             {
                 pickupPrompt.SetActive(false);
-                FindObjectOfType<Controls>().GetAnimator().SetBool("Interacting", true);
+                PlayerControls.GetAnimator().SetBool("Interacting", true);
                 heldObject.AddForce((PickUpObject.transform.position - heldObject.position) * speed);
             }
             else

@@ -17,8 +17,11 @@ public class LazerScript : MonoBehaviour
     private static int LaserRange = 80;
     private LineRenderer lineRenderer;
     private Vector3 Original;
+    private Controls playerControls;
+
     private void Start()
     {
+        playerControls = FindFirstObjectByType<Controls>();
         lineRenderer = gameObject.GetComponentInParent<LineRenderer>();
         Original = transform.position;
         Original.y = 290;
@@ -51,10 +54,10 @@ public class LazerScript : MonoBehaviour
             }
         }
 
-        if (Vector3.Distance(gameObject.transform.position, FindObjectOfType<Controls>().GetPlayerPos()) < RangeofTip)
+        if (Vector3.Distance(gameObject.transform.position, playerControls.GetPlayerPos()) < RangeofTip)
         {
             RaycastHit hit;
-            if (Physics.Raycast(gameObject.transform.position, (FindObjectOfType<Controls>().GetPlayerPos() - transform.position), out hit, RangeofTip))
+            if (Physics.Raycast(gameObject.transform.position, (playerControls.GetPlayerPos() - transform.position), out hit, RangeofTip))
             {
                 if (hit.collider.tag == "Player")
                 {

@@ -8,6 +8,13 @@ public class WheelTurning : MonoBehaviour
 
     private Quaternion localRotation = Quaternion.Euler(0f, 90f, 0f);
     private int Angle = 0;
+    private EarthPuzzle2 earthPuzzle2Obj;
+
+    private void Start()
+    {
+        earthPuzzle2Obj = FindFirstObjectByType<EarthPuzzle2>();
+    }
+
     private void Update()
     {
 
@@ -21,13 +28,13 @@ public class WheelTurning : MonoBehaviour
         localRotation = Quaternion.Euler(0f, 90f, Angle);
         Debug.Log("turning up wheel " + WheelNumber);
 
-        FindObjectOfType<EarthPuzzle2>().setWheelCodeUp(WheelNumber);
+        earthPuzzle2Obj.setWheelCodeUp(WheelNumber);
     }
     public void TurnDown()
     {
         Angle = Angle - 60;
         localRotation = Quaternion.Euler(0f, 90f, Angle);
 
-        FindObjectOfType<EarthPuzzle2>().setWheelCodeDown(WheelNumber);
+        earthPuzzle2Obj.setWheelCodeDown(WheelNumber);
     }
 }

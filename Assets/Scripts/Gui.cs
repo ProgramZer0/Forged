@@ -5,8 +5,70 @@ using UnityEngine.UI;
 using TMPro;
 using System;
 
+public enum CursorState
+{
+    defaultCursor,
+    handCursor,
+    blankCursor,
+    closedHandCursor
+}
+
 public class Gui : MonoBehaviour
 {
+    [SerializeField] private Texture2D defaultCursor;
+    [SerializeField] private Texture2D handCursor;
+    [SerializeField] private Texture2D closedHandCursor;
+    [SerializeField] private Texture2D BLANK;
+
+    [SerializeField] private Vector2 defaultHotspot = Vector2.zero;
+    [SerializeField] private Vector2 handHotspot = Vector2.zero;
+
+    public CursorState currentState = CursorState.defaultCursor;
+
+    public void SetDefaultCursor()
+    {
+        currentState = CursorState.defaultCursor;
+        Cursor.SetCursor(defaultCursor, defaultHotspot, CursorMode.Auto);
+    }
+    public void SetDefaultCursor(Vector2 pos)
+    {
+        currentState = CursorState.defaultCursor;
+        Cursor.SetCursor(defaultCursor, pos, CursorMode.Auto);
+    }
+
+    public void SetHandCursor()
+    {
+        currentState = CursorState.handCursor;
+        Cursor.SetCursor(handCursor, handHotspot, CursorMode.Auto);
+    }
+    public void SetHandCursor(Vector2 pos)
+    {
+        currentState = CursorState.handCursor;
+        Cursor.SetCursor(handCursor, pos, CursorMode.Auto);
+    }
+
+    public void SetBankCursor()
+    {
+        currentState = CursorState.blankCursor;
+        Cursor.SetCursor(BLANK, handHotspot, CursorMode.Auto);
+    }
+    public void SetBankCursor(Vector2 pos)
+    {
+        currentState = CursorState.blankCursor;
+        Cursor.SetCursor(BLANK, pos, CursorMode.Auto);
+    }
+
+    public void SetClosedHCursor()
+    {
+        currentState = CursorState.closedHandCursor;
+        Cursor.SetCursor(closedHandCursor, handHotspot, CursorMode.Auto);
+    }
+    public void SetClosedHCursor(Vector2 pos)
+    {
+        currentState = CursorState.closedHandCursor;
+        Cursor.SetCursor(closedHandCursor, pos, CursorMode.Auto);
+    }
+
     /*
     [SerializeField] private Inventory tempSwap;
     [SerializeField] private Items empty;

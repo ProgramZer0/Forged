@@ -304,11 +304,11 @@ public class Controls : MonoBehaviour
         //Debug.Log(invIsUp);
         if (escKeyWasPressed)
         {
-            if (FindObjectOfType<WorkstationScript>().stationCheck())
+            if (FindFirstObjectByType<WorkstationScript>().stationCheck())
             {
                 lockedMovement = false;
                 SetMainPlayerView();
-                FindObjectOfType<WorkstationScript>().DisableUI();
+                FindFirstObjectByType<WorkstationScript>().DisableUI();
                 escKeyWasPressed = false;
             }
             

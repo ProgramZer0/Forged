@@ -1,276 +1,538 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
+/*
+ * Smeltery.cs
+ * 
+ * This script handles the smeltery mechanics
+ *
+ * Responsibilities:
+ *  - Add TempManager script to items when removed from smeltery
+ *  - Handle initial item color and color changes based on heat
+ *  - Modify items according to recipes while in the smeltery
+ *  - Visual effects of the smeltery (fire, light, UI indicators)
+ *  - Handle charcoal/fuel timers and heating
+ *  - Handle smeltery modes (basic / upgraded)
+ *  - Update UI elements (heat, in-fire indicator, charcoal)
+ *
+ * Heat System:
+ *  - Heat levels: 1–10 (optional, can be derived from timer/temperature)
+ *  - Each level takes longer to reach depending on tier (e.g., +20 sec per level)
+ *  - Certain items may be destroyed if left too long at a given heat level
+ *
+ * Upgraded Mode Differences:
+ *  - Adds TempManager automatically and sets item's heat timer
+ *  - Modifies item color and item class properties
+ *  - Continues heating if charcoal is present
+ *  - Maximum temperature is set internally in UI (tier 1–8)
+ *  - If item stays in same stage >30 sec, enters “curing” mode
+ *
+ * Notes:
+ *  - TempManager handles cooling and visual tint after item leaves the smeltery
+ *  - Heat is continuous; tiers are mainly for gameplay scaling
+ *  - Components are enabled/disabled instead of destroyed for performance
+ */
+
 public class Smeltery : MonoBehaviour
 {
-
+    [Header("UI & Effects")]
     [SerializeField] private Button PutInFireButton;
-    [SerializeField] private Items EmptyItem;
-    [SerializeField] private Items CharItem;
     [SerializeField] private GameObject heatUI;
     [SerializeField] private GameObject CharcoalIndicator;
     [SerializeField] private GameObject InFireUI;
     [SerializeField] private GameObject Fire;
     [SerializeField] private Animator Tongs;
     [SerializeField] private Light heatLight;
-    [SerializeField] private Color Stage0Color;
-    [SerializeField] private Color Stage1Color;
-    [SerializeField] private Color Stage2Color;
-    [SerializeField] private Color Stage3Color;
-    [SerializeField] private Color Stage4Color;
+    private Renderer rend;
+    private Color baseColor;
 
-    [SerializeField] private WorkstationScript workstationScript;
+    [Header("Tier Settings")]
+    [SerializeField] private int tierLevel = 1; // 1–8
+    private float maxTemp;
+    private float heatIncreaseRate;
+    private float heatDecreaseRate;
 
-    private int teirLevel;
-    private int maxTemp;
-    private int increasePerSec;
-    private int decreasePerSec;
-    private Items smeltItem;
-    private float increaseTimer = 0;
-    private float decreaseTimer = 0;
-    private float timerOfStage = 0;
-    private float heat = 0;
-    private float charcoalTime;
-    private bool timerOn = false;
+    [Header("Smeltery State")]
+    public Items currentItem;
+    private GameObject currentObj;
+    [SerializeField] private Items EmptyItem;
+    [SerializeField] private Items CharItem;
+    private float heat = 0f;
+    private float charcoalFuel = 0f;
     private bool inFire = false;
-    //private bool addtoHeat = false;
+
+    [Header("Timers")]
+    private float timeAtStage = 0f;
+
+    [Header("References")]
+    [SerializeField] private WorkstationScript workstationScript;
+    [SerializeField] private CraftingRecipeManager recipeManager;
+    [SerializeField] private ItemDatabase itemDatabase;
+
+    [Header("Curing settings")]
+    private float heatCheckTimer = 0f;          // counts up to 30 seconds
+    private float heatAtCheckStart = 0f;        // stores heat when the 30-sec window started
+    private const float curingDelay = 30f;      // must be stable for 30 seconds
+    private const float heatStableThreshold = 20f; // max allowed heat change to start curing
 
 
-    void Start()
+    [Header("Optimization")]
+    private Recipe currentHeatingRecipe;
+    private int requiredHeatLevel;
+    private Coroutine heatingCheckCoroutine;
+    private Coroutine curingCheckCoroutine;
+
+    private void Start()
     {
-        charcoalTime = 0;
-        smeltItem = EmptyItem;
-        teirLevel = 1;
-        maxTemp = 1000 * teirLevel + 1000;
-        heatLight.intensity = 0;
+        SetTierValues();
+        currentItem = EmptyItem;
 
-        PutInFireButton.onClick.AddListener(PutInFire);
+        PutInFireButton.onClick.AddListener(ToggleFire);
+        UpdateUI();
     }
 
     private void Update()
     {
-        //turns the thing on if theres charcoal
-        if (charcoalTime > 0)
+        HandleFuel();
+        HandleHeat();
+        HandleItemHeating();
+
+        // Check if item is in smeltery and not empty
+        if (currentItem != null && currentItem != EmptyItem)
         {
-            timerOn = true;
+            HandleCuringTimer();
         }
-
-        //starting timer and decreasing charcoal time and increasing heat
-        if (timerOn)
-        {
-            increaseTimer += Time.deltaTime;
-            charcoalTime -= Time.deltaTime;
-            heat = ((int)increaseTimer) * increasePerSec;
-            //cleanup for charcoalTime
-            if (charcoalTime < 0)
-                charcoalTime = 0;
-        }
-        else
-        {
-            //starting decrease timer if the charcoal ran out
-            decreaseTimer += Time.deltaTime;
-
-            //if decrease timer reached increase timer and heat is == 0 they are both set to 0 and 
-            if (heat == 0)
-            {
-                increaseTimer = 0;
-                decreaseTimer = 0;
-            }
-        }
-
-        //Debug.Log(timerOn);
-        //decrease heat if timer is on and there is heat in the smelter
-        if (timerOn == false && heat > 0)
-        {
-            float increaseHeat = (int)increaseTimer * increasePerSec;
-            if (increaseHeat > 2000)
-                increaseHeat = 2000;
-            heat = (increaseHeat) - (decreaseTimer * decreasePerSec);
-        }
-
-        if (charcoalTime == 0)
-        {
-            timerOn = false;
-        }
-
-        if (heat < 0)
-            heat = 0;
-
-        if (heat > maxTemp)
-            heat = maxTemp;
-
-        if(heat > 0)
-        {
-            heatLight.intensity = heat / 100;
-        } else
-        {
-            heatLight.intensity = 0;
-        }
-
-        smeltItem = workstationScript.getItemOnTongs();
-
-        if (heat >= smeltItem.heatLevel && inFire)
-        {
-            timerOfStage += Time.deltaTime;
-        }
-        else
-        {
-            timerOfStage -= Time.deltaTime;
-            if (timerOfStage < 0)
-                timerOfStage = 0;
-        }
-
-        //Debug.Log("Current Heat is " + heat);
-        //Debug.Log("increaseTimer time is " + increaseTimer);
-        //Debug.Log("decreaseTimer time is " + decreaseTimer);
-        //Debug.Log("timerOfStage time is " + timerOfStage);
-        //Debug.Log("charcoalTime time is " + charcoalTime); 
-
-        switch (((int)timerOfStage))
-        {
-            case 0:
-                smeltItem = workstationScript.getItemOnTongs();
-                smeltItem.heatStage = 0;
-                workstationScript.setItemOnTongs(smeltItem);
-                heatUI.GetComponent<Image>().color = Stage0Color;
-                break;
-            case 10:
-                smeltItem = workstationScript.getItemOnTongs();
-                smeltItem.heatStage = 1;
-                workstationScript.setItemOnTongs(smeltItem);
-                heatUI.GetComponent<Image>().color = Stage1Color;
-                break;
-            case 15:
-                smeltItem = workstationScript.getItemOnTongs();
-                smeltItem.heatStage = 2;
-                workstationScript.setItemOnTongs(smeltItem);
-                heatUI.GetComponent<Image>().color = Stage2Color;
-                break;
-            case 20:
-                smeltItem = workstationScript.getItemOnTongs();
-                smeltItem.heatStage = 3;
-                workstationScript.setItemOnTongs(smeltItem);
-                heatUI.GetComponent<Image>().color = Stage3Color;
-                break;
-            case 30:
-                smeltItem = workstationScript.getItemOnTongs();
-                smeltItem.heatStage = 4;
-                workstationScript.setItemOnTongs(smeltItem);
-                heatUI.GetComponent<Image>().color = Stage4Color;
-                break;
-            case 50:
-                workstationScript.setItemOnTongs(EmptyItem);
-                break;
-            default:
-                break;
-        }
-
-
-
-        //t1
-        //max temp of 2k 
-        //increases by 1k every charcoal put in, 100 per second for 10 seconds 
-        //goes down slowy only 20 every second
-
-
-        //t2
-        //max temp of 3k 
-        //increases by 2k every charcoal put in, 200 per second for 10 seconds 
-        //goes down slowy only 10 every second
-
-        //each item has a heat level it must be above or matching for 5 seconds per stage, indicator will tell which level of heat
-
-        //stage 1 Yellow heat: smashing impurities
-        //stage 2 Orange heat: making small modifications small verticies 
-        //stage 3 Red heat: making larger mods ie whole sides smash
-        //stage 4 Black heat: used for smelting things in bucket(perhaps destroy things that arent in a bucket after another 5 seconds)
-
-        //
-
-
-
-        //Debug.Log("this is the time: " + timer);
-
+        UpdateVisuals();
+        CheckHeatingRecipes();
+        CheckCuringRecipes();
+        //HandleItemOnTongs();
     }
-    [ContextMenu("add fuel")]
-    public void AddCharcoal()
+    [ContextMenu("add fuel")] public void AddTestCharcoal() { AddCharcoal(100); }
+
+    #region Core Methods
+    public void SetTier(int teir) { tierLevel = teir; }
+    private void SetTierValues()
     {
-        charcoalTime += 100;
+        //heatIncreaseRate = 1.0f * tierLevel;
+        heatIncreaseRate = 1f;
+        heatDecreaseRate = 0.5f / tierLevel;
+        maxTemp = 100f + 20f * tierLevel;
     }
 
-    private void FixedUpdate()
+    private void HandleFuel()
     {
-        increasePerSec = 100 * teirLevel;
-        decreasePerSec = 20 / teirLevel;
-        maxTemp = 1000 * teirLevel + 1000;
-
-        if (charcoalTime > 0 | heat > 0)
-            CharcoalIndicator.SetActive(true);
-        else
-            CharcoalIndicator.SetActive(false);
-
-        Fire.SetActive(timerOn);
-
-        //probs should put timers in here
-    }
-
-    
-    private bool CheckAddCharcoal(Items item)
-    {
-        if (item == CharItem)
+        if (charcoalFuel > 0)
         {
-            charcoalTime += (60 * teirLevel);
-            return true;
-        }
-        else
-            return false;
-    }
-
-    private void PutInFire()
-    {
-        if (inFire)
-        {
-            Tongs.SetBool("FireTongs", false);
-            InFireUI.SetActive(false);
-            inFire = false;
-        }
-        else
-        {
-            Tongs.SetBool("FireTongs", true);
-            InFireUI.SetActive(true);
-            inFire = true;
+            charcoalFuel -= Time.deltaTime;
+            charcoalFuel = Mathf.Max(charcoalFuel, 0);
         }
     }
 
-    private void OnTriggerEnter(Collider collision)
+    private void HandleHeat()
     {
+        if (charcoalFuel > 0)
+        {
+            heat += heatIncreaseRate * Time.deltaTime;
+        }
+        else
+        {
+            heat -= heatDecreaseRate * Time.deltaTime;
+        }
+
+        heat = Mathf.Clamp(heat, 0, maxTemp);
+
+        // Timer for stage (optional curing logic)
+        if (heat > 0 && currentItem != EmptyItem)
+            timeAtStage += Time.deltaTime;
+        else
+            timeAtStage = 0f;
+    }
+
+    private void UpdateVisuals()
+    {
+        // Fire light intensity
+        if (heatLight != null)
+        {
+            // Exponential scaling: tweak the exponent to taste
+            float normalizedHeat = heat / maxTemp; // 0–1
+            heatLight.intensity = Mathf.Pow(normalizedHeat, 0.5f) * 10f; // sqrt curve, ramps faster early
+        }
+
+        // Fire visual
+        if (Fire != null)
+            Fire.SetActive(charcoalFuel > 0);
+
+        // Charcoal indicator
+        if (CharcoalIndicator != null)
+            CharcoalIndicator.SetActive(charcoalFuel > 0);
+
+        // In-fire UI
+        if (InFireUI != null)
+            InFireUI.SetActive(inFire);
+
+        //COLOR visual
+        if (currentObj != null)
+        {
+            ModifyColor();
+        }
+    }
+
+    public void HandleItemOnTongs()
+    {
+        if (workstationScript == null) return;
+
+        currentItem = workstationScript.getItemOnTongs();
+        currentObj = workstationScript.getObjOnTongs();
+
+        if (currentObj == null) return;
+
+        rend = currentObj.GetComponentInChildren<Renderer>();
+        if (rend == null) return;
+
+        if (currentItem.baseColor == default)
+        {
+            baseColor = rend.material.color;
+            currentItem.baseColor = baseColor;
+        }
+        else
+        {
+            baseColor = currentItem.baseColor;
+        }
+    }
+    private void HandleCuringTimer()
+    {
+        if (currentItem == null || currentItem == EmptyItem) return;
+
+        // If heat changed more than threshold, reset the stable timer
+        if (Mathf.Abs(currentItem.heatTimer - heatAtCheckStart) > heatStableThreshold)
+        {
+            heatCheckTimer = 0f;
+            heatAtCheckStart = currentItem.heatTimer; // restart from new heat
+            timeAtStage = 0f;                         // reset curing timer
+            return;
+        }
+
+        // Increment stable timer
+        heatCheckTimer += Time.deltaTime;
+
+        // Only increment stage timer if stable for full curingDelay
+        if (heatCheckTimer >= curingDelay)
+        {
+            timeAtStage += Time.deltaTime;
+        }
+    }
+    private void HandleItemHeating()
+    {
+        if (currentObj == null || currentItem == EmptyItem) return;
+
+        float heatDiff = heat - currentItem.heatTimer;
+
+        // Only transfer if item is cooler than smeltery
+        if (heatDiff > 0.01f)
+        {
+            // Realistic transfer: proportional to difference
+            float transferRate = 0.2f; // fraction per second
+            currentItem.heatTimer += heatDiff * transferRate * Time.deltaTime;
+
+            // Cutoff: if very close to smeltery heat, snap to it
+            if (Mathf.Abs(heat - currentItem.heatTimer) < 0.5f)
+                currentItem.heatTimer = heat;
+        }
+
+        float cutoff = heat * 0.95f; 
+        if (currentItem.heatTimer > cutoff)
+            currentItem.heatTimer = cutoff;
+    }
+    private int GetCurrentItemHeatLevel()
+    {
+        if (currentItem == null) return 0;
+        return Mathf.FloorToInt(currentItem.heatTimer / 20f);
+    }
+
+    #endregion
+
+    #region Public Methods
+
+    public void AddCharcoal(float amount)
+    {
+        charcoalFuel += amount;
+    }
+    private void StartCuringCheck()
+    {
+        if (currentItem == null || currentItem == EmptyItem) return;
+
+        Recipe curingRecipe = recipeManager.FindRecipe(PhaseType.Curing, currentItem.itemID);
+        if (curingRecipe == null) return;
+
+        // Stop any existing coroutine
+        if (curingCheckCoroutine != null)
+            StopCoroutine(curingCheckCoroutine);
+
+        curingCheckCoroutine = StartCoroutine(CuringCheckRoutine(curingRecipe));
+    }
+    public void PutItemInSmeltery(Items item)
+    {
+        if (item == null) return;
+
+        currentItem = item;
+
+        StartCuringCheck();
+        StartHeatingCheck();
+    }
+
+    private void StartHeatingCheck()
+    {
+        // Find the heating recipe once
+        currentHeatingRecipe = recipeManager.FindRecipe(PhaseType.Heating, currentItem.itemID);
+
+        if (currentHeatingRecipe != null)
+        {
+            requiredHeatLevel = Mathf.FloorToInt(currentHeatingRecipe.requiredValue);
+
+            // Stop old coroutine if running
+            if (heatingCheckCoroutine != null)
+                StopCoroutine(heatingCheckCoroutine);
+
+            // Start coroutine to check when item could reach heat
+            heatingCheckCoroutine = StartCoroutine(HeatingCheckRoutine());
+        }
+    }
+
+    public void RemoveItemFromSmeltery()
+    {
+        if (currentObj == null || currentItem == EmptyItem || currentItem == null) return;
+
+        // Add TempManager to item if not present
         try
         {
-            Debug.Log(collision.transform.GetComponent<Item>().item.name);
-            if (CheckAddCharcoal(collision.transform.GetComponent<Item>().item))
-            {
-                Destroy(collision.gameObject);
-            }
-            else
-            {
-                collision.gameObject.GetComponent<Rigidbody>().AddForce(new Vector3(UnityEngine.Random.Range(0, 20), 5, UnityEngine.Random.Range(0, 20)) * 10);
-            }
+
+            TempManager tm  = currentObj.GetComponent<TempManager>();
+            if (tm == null)
+                tm = currentObj.AddComponent<TempManager>();
+
+            tm.currentHeat = currentItem.heatTimer;
+            tm.enabled = true;
         }
         catch
         {
-            //nothing
+            //error
+            return;
+        }
+
+        
+        // Reset smeltery state
+        currentItem = EmptyItem;
+        currentObj = null;
+        heat = 0f;
+        timeAtStage = 0f;
+        inFire = false;
+    }
+
+    public void ToggleFire()
+    {
+        inFire = !inFire;
+
+        if (Tongs != null)
+            Tongs.SetBool("FireTongs", inFire);
+    }
+
+    #endregion
+
+    #region Trigger / Charcoal Pickup
+
+    private void OnTriggerEnter(Collider other)
+    {
+        Item itemComponent = other.GetComponent<Item>();
+        if (itemComponent == null) return;
+
+        Items pickedItem = itemComponent.item;
+
+        if (pickedItem == CharItem)
+        {
+            AddCharcoal(60f * tierLevel);
+            Destroy(other.gameObject);
+        }
+        else
+        {
+            // Nudge non-charcoal items
+            Rigidbody rb = other.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.AddForce(new Vector3(Random.Range(0, 20), 5, Random.Range(0, 20)) * 10);
+            }
         }
     }
-        
-    public void changedItemOnTongs()
-    {
-        timerOfStage = 0;
-        inFire = false;
-        InFireUI.SetActive(false);
-        smeltItem = EmptyItem;
-    }
-    
 
+    private void ModifyColor()
+    {
+        if (rend == null) return;
+
+        float max = 200f;
+        float heatPercent = Mathf.Clamp01(currentItem.heatTimer / max);
+
+        Color heatTint = new Color(1f, 0.35f, 0.05f);
+
+        Color finalColor = Color.Lerp(baseColor, heatTint, heatPercent * 0.5f);
+
+        rend.material.color = finalColor;
+    }
+
+    #endregion
+
+    #region Crafting section
+
+    private void CheckHeatingRecipes()
+    {
+        if (currentItem == null || currentItem == EmptyItem) return;
+
+        // Find the first recipe for this item in the Heating phase
+        Recipe heatingRecipe = recipeManager.FindRecipe(PhaseType.Heating, currentItem.itemID);
+        if (heatingRecipe == null) return;
+
+        int heatlvl = GetCurrentItemHeatLevel();
+        // Check if the item reached the required heat
+        if (heatlvl >= heatingRecipe.requiredValue)
+        {
+            Items newItem = itemDatabase.GetItemByID(heatingRecipe.outputItemID);
+            if (newItem != null)
+            {
+                float oldHeat = currentItem.heatTimer;
+                ModelChange(newItem);
+                currentItem = newItem;
+                currentItem.heatTimer = oldHeat;
+                HandleItemOnTongs();
+            }
+        }
+    }
+
+    private void ModelChange(Items changeTo)
+    {
+        //will cover this later when i do visual edits to all the items.
+    }
+
+    private void CheckCuringRecipes()
+    {
+        if (currentItem == null || currentItem == EmptyItem) return;
+
+        // Only check curing if the item has been at the current stage long enough
+        Recipe curingRecipe = recipeManager.FindRecipe(PhaseType.Curing, currentItem.itemID);
+        if (curingRecipe == null) return;
+
+
+        int heatlvl = GetCurrentItemHeatLevel();
+
+        int timeInlvl = heatlvl * 15;
+
+        // Check if the item has been in the smeltery long enough to cure
+        if (heatlvl == curingRecipe.requiredValue) 
+        {
+            if (timeAtStage >= timeInlvl)
+            {
+                Items newItem = itemDatabase.GetItemByID(curingRecipe.outputItemID);
+                if (newItem != null)
+                {
+                    float oldHeat = currentItem.heatTimer;
+                    ModelChange(newItem);
+                    currentItem = newItem;
+                    currentItem.heatTimer = oldHeat;
+                    HandleItemOnTongs();
+                }
+            }
+        }
+    }
+
+    private IEnumerator HeatingCheckRoutine()
+    {
+        if (currentItem == null || currentHeatingRecipe == null) yield break;
+
+        // Convert heat level to required heat
+        float targetHeat = requiredHeatLevel * 20f;
+
+        // Wait until item reaches target heat
+        while (currentItem != null && currentItem.heatTimer < targetHeat)
+        {
+            float heatDiff = targetHeat - currentItem.heatTimer;
+
+            // Estimate time to reach target heat
+            float estimatedTime = heatDiff / (heatIncreaseRate * 0.2f); // 0.2f = transferRate in HandleItemHeating
+            yield return new WaitForSeconds(Mathf.Max(estimatedTime, 0.1f));
+        }
+
+        // Item reached target heat — apply recipe
+        if (currentItem != null)
+        {
+            Items newItem = itemDatabase.GetItemByID(currentHeatingRecipe.outputItemID);
+            if (newItem != null)
+            {
+                float oldHeat = currentItem.heatTimer;
+                ModelChange(newItem);
+                currentItem = newItem;
+                currentItem.heatTimer = oldHeat;
+                HandleItemOnTongs();
+            }
+        }
+    }
+    private IEnumerator CuringCheckRoutine(Recipe curingRecipe)
+    {
+        if (currentItem == null || curingRecipe == null) yield break;
+
+        int requiredHeatLevel = Mathf.FloorToInt(curingRecipe.requiredValue);
+
+        while (currentItem != null)
+        {
+            int heatLevel = GetCurrentItemHeatLevel();
+
+            if (heatLevel >= requiredHeatLevel)
+            {
+                // Estimate time to stable heat
+                float heatDiff = Mathf.Abs(currentItem.heatTimer - heatAtCheckStart);
+                float timeToStableHeat = Mathf.Max(0f, (heatDiff > heatStableThreshold) ? (heatDiff - heatStableThreshold) / (heatIncreaseRate * 0.2f) : 0f);
+
+                // Time left to reach curing delay
+                float remainingCuringTime = Mathf.Max(curingDelay - heatCheckTimer, 0f);
+
+                float waitTime = Mathf.Max(timeToStableHeat, 0f) + remainingCuringTime;
+
+                yield return new WaitForSeconds(Mathf.Max(waitTime, 0.1f)); // wait at least 0.1s
+
+                // After wait, check if item is still valid
+                if (currentItem == null) yield break;
+
+                // If still meets condition, apply recipe
+                if (timeAtStage >= requiredHeatLevel * 15f) // or your timeInLevel formula
+                {
+                    Items newItem = itemDatabase.GetItemByID(curingRecipe.outputItemID);
+                    if (newItem != null)
+                    {
+                        float oldHeat = currentItem.heatTimer;
+                        ModelChange(newItem);
+                        currentItem = newItem;
+                        currentItem.heatTimer = oldHeat;
+                        HandleItemOnTongs();
+                    }
+                    yield break; // cured, stop coroutine
+                }
+            }
+
+            // If not ready, loop again
+            yield return new WaitForSeconds(1f);
+        }
+    }
+
+    #endregion
+
+    #region Optional UI Update
+
+    private void UpdateUI()
+    {
+        if (heatUI != null)
+            heatUI.SetActive(heat > 0);
+        if (CharcoalIndicator != null)
+            CharcoalIndicator.SetActive(charcoalFuel > 0);
+        if (InFireUI != null)
+            InFireUI.SetActive(inFire);
+    }
+
+    #endregion
 }

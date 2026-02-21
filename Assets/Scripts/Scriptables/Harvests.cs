@@ -7,21 +7,24 @@ public class Harvests : MonoBehaviour
     public Harvestables harvestable;
 
     private float RangeofHarvest;
-    private Inventory inventory;
     private int hotbarSelected;
+    private Controls playerControls;
+    private TerrainUtils TUtils;
 
     private void Start()
     {
+        TUtils = FindFirstObjectByType<TerrainUtils>();
+        playerControls = FindFirstObjectByType<Controls>();
         RangeofHarvest = 4f;
         hotbarSelected = 0;
     }
     private void FixedUpdate()
     {
-        hotbarSelected = FindObjectOfType<Controls>().getHotbarSelected();
-        if (Vector3.Distance(gameObject.transform.position, FindObjectOfType<Controls>().GetPlayerPos()) < RangeofHarvest)
+        hotbarSelected = playerControls.getHotbarSelected();
+        if (Vector3.Distance(gameObject.transform.position, playerControls.GetPlayerPos()) < RangeofHarvest)
         {
             RaycastHit hit;
-            if (Physics.Raycast(gameObject.transform.position, (FindObjectOfType<Controls>().GetPlayerPos() - transform.position), out hit, RangeofHarvest, FindObjectOfType<TerrainUtils>().getTreeMask()))
+            if (Physics.Raycast(gameObject.transform.position, (playerControls.GetPlayerPos() - transform.position), out hit, RangeofHarvest, TUtils.getTreeMask()))
             {
                 if (hit.collider.tag == "Player")
                 {
@@ -35,7 +38,7 @@ public class Harvests : MonoBehaviour
                                 Vector3 temchop;
                                 temchop = transform.position;
                                 temchop.y = temchop.y + 1f;
-                                FindObjectOfType<Controls>().GetAnimator().SetBool("HitWithAxeSide", true);
+                                playerControls.GetAnimator().SetBool("HitWithAxeSide", true);
 
                                 GetComponent<TreeUtils>().FellTree();
                                 Destroy(gameObject);

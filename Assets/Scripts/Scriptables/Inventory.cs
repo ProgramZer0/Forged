@@ -10,7 +10,7 @@ public class Inventory : ScriptableObject
     public List<InventorySlot> Container = new List<InventorySlot>();
     public void AddItem(Items _item, int _amount)
     {
-        Items empty = FindObjectOfType<Bloomery>().returnEmpty();
+        Items empty = FindFirstObjectByType<Bloomery>().ReturnEmpty();
         //Debug.Log("is running");
         bool hasItemRoom = false;
         for (int i = 0; i < 18; i++)

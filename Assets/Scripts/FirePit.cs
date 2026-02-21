@@ -26,9 +26,11 @@ public class FirePit : MonoBehaviour
     private float timePassed;
     private string textforTip;
     private float RangeofTip = 5;
+    private Controls playerControls;
     
     void Start()
     {
+        playerControls = FindAnyObjectByType<Controls>();
         fireReady.SetActive(false);
         logsPlaced = 0;
         timePassed = 0;
@@ -51,10 +53,10 @@ public class FirePit : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if(Vector3.Distance(gameObject.transform.position, FindObjectOfType<Controls>().GetPlayerPos()) < RangeofTip)
+        if(Vector3.Distance(gameObject.transform.position, playerControls.GetPlayerPos()) < RangeofTip)
         {
             RaycastHit hit;
-            if(Physics.Raycast(gameObject.transform.position, (FindObjectOfType<Controls>().GetPlayerPos() - transform.position), out hit, RangeofTip))
+            if(Physics.Raycast(gameObject.transform.position, (playerControls.GetPlayerPos() - transform.position), out hit, RangeofTip))
             {
                 if(hit.collider.tag == "Player")
                 {

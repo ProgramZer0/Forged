@@ -8,23 +8,25 @@ public enum Itemtype
     Potions,
     Equipment,
     Tools,
-    Default
+    Default,
+    Ore
 }
 
 [CreateAssetMenu(fileName = "New Item", menuName = "Assets/Item")]
 public class Items : ScriptableObject
 {
     public Itemtype type;
-    public string itemID;
+    public int itemID;
     public string itemName;
+
     [TextArea]
     public string itemDescription;
     public string cost;
-    public Items nextItem;
     public Sprite itemSprite;
     public GameObject model;
-    public bool CanGoInSmeltery;
-    public bool impuritySmash;
-    public int heatLevel;
-    public int heatStage;
+    public PhaseType currentPhase = PhaseType.NONE;
+    public float heatTimer = 0f;
+    public float condenced = 0f;
+    public Color baseColor; 
+    
 }
