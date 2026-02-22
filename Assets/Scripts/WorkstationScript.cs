@@ -20,6 +20,11 @@ public enum AnvilHitType
     Main,
     Edge
 }
+public enum SmithingMode
+{
+    Normal,
+    Expert
+}
 
 public class WorkstationScript : MonoBehaviour
 {
@@ -33,7 +38,6 @@ public class WorkstationScript : MonoBehaviour
     [SerializeField] private Button SmeltB;
     [SerializeField] private Button AnvilB;
     [SerializeField] private Button EditB;
-
 
     [SerializeField] private Button ChangeSide;
     [SerializeField] private Button ChangeAxisB;
@@ -58,7 +62,6 @@ public class WorkstationScript : MonoBehaviour
 
     [SerializeField] private GameObject displayObj;
 
-
     [SerializeField] private GameObject AnvilPos;
 
     [SerializeField] private GameObject Hammer;
@@ -76,13 +79,15 @@ public class WorkstationScript : MonoBehaviour
 
     [SerializeField] private Gui GUI;
     [SerializeField] private SmithingCameraController EditCameraController;
+    [SerializeField] private CraftingRecipeManager recipeManager;
+    [SerializeField] private ItemDatabase itemDatabase;
 
     [SerializeField] private Vector3 hammerFlatRotationValue;
     [SerializeField] private Vector3 hammerPeenRotationValue;
     [SerializeField] private float minClickWaitTime = 0.05f;
     [SerializeField] private float rangeInteraction = 6f;
 
-
+    public SmithingMode currentSmithingMode;
     public AnvilMode currentAnvilMode;
     private Vector3 lastMousePos;
     private bool isDragging = false;
@@ -112,8 +117,9 @@ public class WorkstationScript : MonoBehaviour
     private Vector3 currentTopAxis = Vector3.up;
     private Vector3[] localAxes = new Vector3[3];
     private int currentAxisIndex = 0;
-
-
+    private Recipe currentRecipe;
+    private Mesh workingMesh;
+    private float originalHeight;
 
     void Start()
     {
@@ -344,7 +350,6 @@ public class WorkstationScript : MonoBehaviour
 
     private void HandleClicking()
     {
-
         if(isMoving)
         {
             MovePivot();
@@ -361,17 +366,19 @@ public class WorkstationScript : MonoBehaviour
         else if (currentAnvilMode == AnvilMode.Flat)
         {
             StartCoroutine(clickWait());
-            if(HandleAnvilEditor())
+            if(HandleCrafting())
                 StartCoroutine(SwingHammerAnimation(true));
             
         }
         else if (currentAnvilMode == AnvilMode.Peen)
         {
             StartCoroutine(clickWait());
-            if (HandleAnvilEditor())
+            if (HandleShapingEditor())
                 StartCoroutine(SwingHammerAnimation(false));
         }
     }
+
+
 
     private IEnumerator SwingHammerAnimation(bool IsFlatSide)
     {
@@ -420,15 +427,8 @@ public class WorkstationScript : MonoBehaviour
         hammerSwingPoint.transform.localRotation = Quaternion.identity;
     }
 
-
-    private bool HandleAnvilEditor()
+    private bool HandleShapingEditor()
     {
-        //need to do 3 things here, 
-        //1 find the direction of the change which is determined by the shape of the object and where the hammer is in its space
-        //2 depending on where the direction is, predict where that point is and behind it depending on if the metal was on the horn or on an indent point or in the middle it will modify it differently
-        //3 get the main point of the mouse 
-        //send all these 3 to editMesh
-
         if (objOnAnvil == null) return false;
 
         Ray ray = mainCam.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
@@ -438,29 +438,210 @@ public class WorkstationScript : MonoBehaviour
         {
             if (hit.collider.gameObject == objOnAnvil)
             {
-                if (itemOnAnvil.type == Itemtype.Metals)
+                Recipe shapingRecipe = recipeManager.FindRecipe(PhaseType.Shaping, itemOnAnvil.itemID);
+                if (shapingRecipe != null)
                 {
-                    Vector3 direction = GetHitDirection(hit);
-                    AnvilHitType hitType = DetermineHitType(hit);
-                    EditMesh(direction, hit.point, Force.value * hitForce, hitType);
-                }
-                else if (itemOnAnvil.type == Itemtype.Ore)
-                {
-                    //changeItem(itemOnAnvil.nextItem);
-                }
-                else if (itemOnAnvil.itemID == 3)
-                {
-                    //changeItem(itemOnAnvil.nextItem);
-                }
-                else
-                    return false;
+                    float tempNeeded = shapingRecipe.requiredValue * 20;
 
+                    if (itemOnAnvil.heatTimer >= tempNeeded)
+                    {
+                        Vector3 direction = GetHitDirection(hit);
+                        AnvilHitType hitType = DetermineHitType(hit);
+                        EditMesh(direction, hit.point, Force.value * hitForce, hitType);
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
+    }
+
+    private bool HandleShapingEditor(Recipe shapingRecipe, RaycastHit hit)
+    {
+        if (shapingRecipe != null)
+        {
+            float tempNeeded = shapingRecipe.requiredValue * 20;
+
+            if (itemOnAnvil.heatTimer >= tempNeeded)
+            {
+                Vector3 direction = GetHitDirection(hit);
+                AnvilHitType hitType = DetermineHitType(hit);
+                EditMesh(direction, hit.point, Force.value * hitForce, hitType);
                 return true;
             }
         }
-
         return false;
     }
+
+    private bool HandleCrafting()
+    {
+        if (objOnAnvil == null) return false;
+
+        Ray ray = mainCam.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+
+        if (Physics.Raycast(ray, out hit, rangeInteraction, itemMask))
+        {
+            if (hit.collider.gameObject == objOnAnvil)
+            {
+                Recipe condensingRecipe = recipeManager.FindRecipe(PhaseType.Condensing, itemOnAnvil.itemID);
+                Recipe anvilRecipe = recipeManager.FindRecipe(PhaseType.AnvilHammering, itemOnAnvil.itemID);
+                Recipe shapingRecipe = recipeManager.FindRecipe(PhaseType.Shaping, itemOnAnvil.itemID);
+
+                if(anvilRecipe != null)
+                {
+                    Items newItem = itemDatabase.GetItemByID(anvilRecipe.outputItemID);
+                    if (newItem != null)
+                    {
+                        ModelChange(newItem);
+                        itemOnAnvil = newItem;
+                    }
+                }
+                else if (shapingRecipe != null)
+                {
+                    return HandleShapingEditor(shapingRecipe, hit);
+                }
+                else
+                {
+                    //needs heat 
+                    if (itemOnAnvil.heatTimer >= 0)
+                    {
+                        if (condensingRecipe != null)
+                        {
+                            Recipe heatingRecipe = recipeManager.FindRecipe(PhaseType.Heating, itemOnAnvil.itemID);
+                            if (heatingRecipe != null)
+                            {
+                                float tempNeeded = heatingRecipe.requiredValue * 20;
+
+                                if (itemOnAnvil.heatTimer >= tempNeeded)
+                                {
+                                    CondenseItem(hit, condensingRecipe);
+                                    return true;
+                                }
+                                // not high enough heat
+                            }
+                            // if nothing else is found 
+                        }
+                    }
+                    //no heat at all
+                }
+            }
+        }
+        return false;
+    }
+
+    private void CondenseItem(RaycastHit hit, Recipe condensingRecipe)
+    {
+        float targetPercent = condensingRecipe.requiredValue;
+
+        if (itemOnAnvil.condensed >= targetPercent)
+            return;
+
+        float baseStep = Force.value * 0.01f;
+
+        // Optional: diminishing returns
+        float efficiency = Mathf.Lerp(1f, 0.2f, itemOnAnvil.condensed);
+        float step = baseStep * efficiency;
+
+        float remaining = targetPercent - itemOnAnvil.condensed;
+        float appliedStep = Mathf.Min(step, remaining);
+
+        itemOnAnvil.condensed += appliedStep;
+
+        // Calculate scale from progress instead of multiplying
+        Vector3 scale;
+
+        if (currentSmithingMode == SmithingMode.Normal)
+        {
+            scale = GetNormalModeScaleFromProgress(itemOnAnvil.condensed);
+            objOnAnvil.transform.localScale = scale;
+
+            if (itemOnAnvil.condensed >= targetPercent)
+            {
+                //completed
+            }
+        }
+        else
+            GetExpertModeScaleFromProgress(hit, condensingRecipe);
+
+        
+    }
+
+    private void GetExpertModeScaleFromProgress(RaycastHit hit, Recipe condensingRecipe)
+    {
+        float force = Force.value;
+        float radius = 0.5f;
+
+        if (itemOnAnvil.condensed >= condensingRecipe.requiredValue)
+            return;
+
+        // ----- Progress Gain -----
+        float baseGain = force * 0.02f;
+
+        float efficiency = Mathf.Lerp(1f, 0.2f, itemOnAnvil.condensed);
+        float appliedGain = baseGain * efficiency;
+
+        float remaining = condensingRecipe.requiredValue - itemOnAnvil.condensed;
+        appliedGain = Mathf.Min(appliedGain, remaining);
+
+        itemOnAnvil.condensed += appliedGain;
+
+        // ----- Mesh Deformation -----
+        Vector3[] vertices = workingMesh.vertices;
+
+        Vector3 localHit = objOnAnvil.transform.InverseTransformPoint(hit.point);
+        Vector3 localDirection = objOnAnvil.transform.InverseTransformDirection(Vector3.down);
+
+        float maxHeight = Mathf.Lerp(
+            originalHeight,
+            originalHeight * 0.5f,
+            itemOnAnvil.condensed
+        );
+
+        float currentHeight = workingMesh.bounds.size.y;
+        float allowedCompression = currentHeight - maxHeight;
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            float distance = Vector3.Distance(vertices[i], localHit);
+
+            if (distance < radius)
+            {
+                float falloff = 1f - (distance / radius);
+
+                Vector3 move = localDirection * force * 0.01f * falloff;
+
+                // Clamp vertical compression
+                if (allowedCompression > 0)
+                    vertices[i] += move;
+            }
+        }
+
+        workingMesh.vertices = vertices;
+        workingMesh.RecalculateNormals();
+        workingMesh.RecalculateBounds();
+
+        if (itemOnAnvil.condensed >= condensingRecipe.requiredValue)
+        {
+            //
+        }
+    }
+
+    private Vector3 GetNormalModeScaleFromProgress(float progress)
+    {
+        float height = Mathf.Lerp(1f, 0.5f, progress);
+        float length = Mathf.Lerp(1f, 1.8f, progress);
+        float width = Mathf.Lerp(1f, 0.8f, progress);
+
+        return new Vector3(width, height, length);
+    }
+
+    private void ModelChange(Items changeTo)
+    {
+        //will cover this later when i do visual edits to all the items.
+    }
+
     private Vector3 GetHitDirection(RaycastHit hit)
     {
         if (currentAnvilMode == AnvilMode.Flat)

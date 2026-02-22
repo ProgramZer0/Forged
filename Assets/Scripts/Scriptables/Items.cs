@@ -26,7 +26,7 @@ public class Items : ScriptableObject
     public GameObject model;
     public PhaseType currentPhase = PhaseType.NONE;
     public float heatTimer = 0f;
-    public float condenced = 0f;
+    public float condensed = 0f;
     public Color baseColor; 
     
 }

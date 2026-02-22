@@ -130,14 +130,14 @@ public class Bloomery : MonoBehaviour
         if (blooming) return;
         if (currentItem == null) return;
         if (currentRecipe == null) return;
-        if (currentCharcoal <= 0) return;
 
-        float ratio = currentItemCount / (float)currentCharcoal;
-        charcoalNeededPerItem = 1f / currentRecipe.requiredValue;
-        if (ratio >= currentRecipe.requiredValue && !blooming)
+        charcoalNeededPerItem = Mathf.CeilToInt(1f / currentRecipe.requiredValue);
+
+        if (currentItemCount > 0 && currentCharcoal >= charcoalNeededPerItem)
         {
             blooming = true;
             bloomTimer = 0f;
+            charocalTimer = 0f;
             bloomEffects.SetActive(true);
             bloomGunk.SetActive(true);
         }

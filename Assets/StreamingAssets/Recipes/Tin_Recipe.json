@@ -1,16 +1,39 @@
 {
-    "Recipes": [
-      {
-        "InputItemIDs": [1],
-      "Phase": 0,
-      "RequiredValue": 1.0,
-      "OutputItemID": 2
-      },
+  "Recipes": [
     {
-        "InputItemIDs": [2],
-      "Phase": 1,
-      "RequiredValue": 0.75,
-      "OutputItemID": 3
+      "inputItemIDs": [ 1 ],
+      "phase": 5,
+      "requiredValue": 1.0,
+      "outputItemID": 2
+    },
+    {
+      "inputItemIDs": [ 2 ],
+      "phase": 5,
+      "requiredValue": 1.0,
+      "outputItemID": 3
+    },
+    {
+      "inputItemIDs": [ 2 ],
+      "phase": 4,
+      "requiredValue": 0.50,
+      "outputItemID": 4
+    },
+    {
+      "inputItemIDs": [ 4 ],
+      "phase": 2,
+      "requiredValue": 0.70,
+      "outputItemID": 5
+    },
+    {
+      "inputItemIDs": [ 4 ],
+      "phase": 1,
+      "requiredValue": 2,
+      "outputItemID": 5
+    },
+    {
+      "inputItemIDs": [ 5 ],
+      "phase": 3,
+      "requiredValue": 2,
+      "outputItemID": 5
     }
-  ]
 }

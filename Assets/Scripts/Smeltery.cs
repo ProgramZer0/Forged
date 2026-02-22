@@ -391,6 +391,12 @@ public class Smeltery : MonoBehaviour
         if (heatingRecipe == null) return;
 
         int heatlvl = GetCurrentItemHeatLevel();
+        if (heatingRecipe.outputItemID == currentItem.itemID)
+        {
+            currentItem.currentPhase = PhaseType.Heating;
+            return;
+        }
+
         // Check if the item reached the required heat
         if (heatlvl >= heatingRecipe.requiredValue)
         {

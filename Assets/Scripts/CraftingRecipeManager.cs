@@ -26,8 +26,16 @@ public class CraftingRecipeManager : MonoBehaviour
     {
         string dirName = Path.Combine(Application.streamingAssetsPath, folderDirName);
         LoadRecipesFromFolder(dirName);
-        string modDirName = Path.Combine(Application.persistentDataPath, folderDirName);
-        LoadRecipesFromFolder(modDirName);
+        try
+        {
+            string modDirName = Path.Combine(Application.persistentDataPath, folderDirName);
+            LoadRecipesFromFolder(modDirName);
+        }
+        catch
+        {
+
+        }
+        
     }
 
     public void LoadRecipesFromFolder(string folderPath)
@@ -42,6 +50,7 @@ public class CraftingRecipeManager : MonoBehaviour
 
             foreach (var recipe in collection.Recipes)
             {
+                Debug.Log(recipe);
                 RegisterRecipe(recipe);
             }
         }
