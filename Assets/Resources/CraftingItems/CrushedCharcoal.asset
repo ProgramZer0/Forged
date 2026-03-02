@@ -12,14 +12,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b83ad78a2162b6f498fabbd5074235a0, type: 3}
   m_Name: CrushedCharcoal
   m_EditorClassIdentifier: 
-  type: 1
-  itemID: 69
+  type: 2
+  itemID: 101
   itemName: Crushed Charcoal
   itemDescription: 'It''s crushed charcoal used in alot of things
 
     Fun Fact 4:
     This item has an ID of 69. Nice.'
   cost: 3
-  nextItem: {fileID: 0}
   itemSprite: {fileID: 21300000, guid: be54510263b9f3a4bae6dd35c8debaad, type: 3}
   model: {fileID: 3806649302217218784, guid: d005d38b796068f4e96ff7cf71fe3392, type: 3}
+  currentPhase: 0
+  heatTimer: 0
+  condensed: 0
+  baseColor: {r: 0, g: 0, b: 0, a: 0}

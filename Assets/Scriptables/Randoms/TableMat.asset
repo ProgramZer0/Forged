@@ -13,14 +13,13 @@ MonoBehaviour:
   m_Name: TableMat
   m_EditorClassIdentifier: 
   type: 6
-  itemID: 110
+  itemID: 2110
   itemName: Table Mat
   itemDescription: 'Covers a table '
   cost: 
-  nextItem: {fileID: 0}
   itemSprite: {fileID: 0}
   model: {fileID: 109523895870032392, guid: 454ff8bedbc681342bf637723ed1499f, type: 3}
-  CanGoInSmeltery: 0
-  impuritySmash: 0
-  heatLevel: 0
-  heatStage: 0
+  currentPhase: 0
+  heatTimer: 0
+  condensed: 0
+  baseColor: {r: 0, g: 0, b: 0, a: 0}

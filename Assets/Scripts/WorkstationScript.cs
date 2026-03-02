@@ -378,8 +378,6 @@ public class WorkstationScript : MonoBehaviour
         }
     }
 
-
-
     private IEnumerator SwingHammerAnimation(bool IsFlatSide)
     {
         // Record current rotation (hover rotation)
@@ -483,23 +481,34 @@ public class WorkstationScript : MonoBehaviour
 
         if (Physics.Raycast(ray, out hit, rangeInteraction, itemMask))
         {
+            Debug.Log("hit item " + hit.collider.gameObject.name);
             if (hit.collider.gameObject == objOnAnvil)
             {
+                Debug.Log("obj is the obj on anvil:  " + hit.collider.gameObject.name);
                 Recipe condensingRecipe = recipeManager.FindRecipe(PhaseType.Condensing, itemOnAnvil.itemID);
                 Recipe anvilRecipe = recipeManager.FindRecipe(PhaseType.AnvilHammering, itemOnAnvil.itemID);
                 Recipe shapingRecipe = recipeManager.FindRecipe(PhaseType.Shaping, itemOnAnvil.itemID);
 
+
+
                 if(anvilRecipe != null)
                 {
+                    Debug.Log("anvil recipe exsist ID: Input Item: " + anvilRecipe.inputItemIDs[0] +
+                        ", requiredValue: " + anvilRecipe.requiredValue + ", output Item: " + anvilRecipe.outputItemID);
+
                     Items newItem = itemDatabase.GetItemByID(anvilRecipe.outputItemID);
+                    Debug.Log("Item: " + newItem.name);
+
                     if (newItem != null)
                     {
-                        ModelChange(newItem);
+                        ModelChange(newItem, hit.collider.gameObject);
                         itemOnAnvil = newItem;
                     }
                 }
                 else if (shapingRecipe != null)
                 {
+                    Debug.Log("shaping recipe exsist ID:" + anvilRecipe.recipeID);
+
                     return HandleShapingEditor(shapingRecipe, hit);
                 }
                 else
@@ -509,6 +518,8 @@ public class WorkstationScript : MonoBehaviour
                     {
                         if (condensingRecipe != null)
                         {
+                            Debug.Log("condencing recipe exsist ID:" + anvilRecipe.recipeID);
+
                             Recipe heatingRecipe = recipeManager.FindRecipe(PhaseType.Heating, itemOnAnvil.itemID);
                             if (heatingRecipe != null)
                             {
@@ -637,9 +648,38 @@ public class WorkstationScript : MonoBehaviour
         return new Vector3(width, height, length);
     }
 
-    private void ModelChange(Items changeTo)
+    private void ModelChange(Items changeTo, GameObject obj)
     {
-        //will cover this later when i do visual edits to all the items.
+        Debug.Log("Changing Models: change to " + changeTo.name + ", from " + obj.GetComponent<Item>().item.name);
+        switch (changeTo.type)
+        {
+            case Itemtype.Ore:
+                //this should never happen
+                break;
+            case Itemtype.Chunk:
+                if (obj.GetComponent<Item>().item.type == Itemtype.Ore)
+                    obj.GetComponent<OreSplitter>().SplitOre();
+                break;
+            case Itemtype.Dust:
+                //make dust from anything 
+                break;
+            case Itemtype.Metal:
+                if (obj.GetComponent<Item>().item.type == Itemtype.Dust)
+                {
+                    //compress dust to metal
+                }
+                if (obj.GetComponent<Item>().item.type == Itemtype.Bloom)
+                {
+                    //making bloom texture change to metal texture
+                }
+                if (obj.GetComponent<Item>().item.type == Itemtype.Ore)
+                {
+                    //shape for moab stuff
+                }
+                break;
+            }
+
+        obj.GetComponent<Item>().item = changeTo;
     }
 
     private Vector3 GetHitDirection(RaycastHit hit)

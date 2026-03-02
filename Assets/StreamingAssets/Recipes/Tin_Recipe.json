@@ -2,38 +2,39 @@
   "Recipes": [
     {
       "inputItemIDs": [ 1 ],
-      "phase": 5,
+      "phaseNeeded": 5,
       "requiredValue": 1.0,
       "outputItemID": 2
     },
     {
       "inputItemIDs": [ 2 ],
-      "phase": 5,
+      "phaseNeeded": 5,
       "requiredValue": 1.0,
       "outputItemID": 3
     },
     {
       "inputItemIDs": [ 2 ],
-      "phase": 4,
+      "phaseNeeded": 4,
       "requiredValue": 0.50,
       "outputItemID": 4
     },
     {
       "inputItemIDs": [ 4 ],
-      "phase": 2,
+      "phaseNeeded": 2,
       "requiredValue": 0.70,
       "outputItemID": 5
     },
     {
       "inputItemIDs": [ 4 ],
-      "phase": 1,
+      "phaseNeeded": 1,
       "requiredValue": 2,
       "outputItemID": 5
     },
     {
       "inputItemIDs": [ 5 ],
-      "phase": 3,
+      "phaseNeeded": 3,
       "requiredValue": 2,
       "outputItemID": 5
     }
+  ]
 }

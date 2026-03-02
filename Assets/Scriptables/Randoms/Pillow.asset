@@ -13,14 +13,13 @@ MonoBehaviour:
   m_Name: Pillow
   m_EditorClassIdentifier: 
   type: 6
-  itemID: 112
+  itemID: 2112
   itemName: Pillow
   itemDescription: Pillow FIGHT
   cost: 0
-  nextItem: {fileID: 0}
   itemSprite: {fileID: 0}
   model: {fileID: 4450585492685423992, guid: 21628e4756fbf26459665a50b4c7eac6, type: 3}
-  CanGoInSmeltery: 0
-  impuritySmash: 0
-  heatLevel: 0
-  heatStage: 0
+  currentPhase: 0
+  heatTimer: 0
+  condensed: 0
+  baseColor: {r: 0, g: 0, b: 0, a: 0}

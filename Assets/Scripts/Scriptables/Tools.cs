@@ -9,7 +9,7 @@ public class Tools : Items
     
     public void Awake()
     {
-        type = Itemtype.Metals;
+        type = Itemtype.Tools;
     }
 }
 

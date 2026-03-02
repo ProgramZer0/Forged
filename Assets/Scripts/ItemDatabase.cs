@@ -1,12 +1,13 @@
+using System.Linq; // make sure this is at the top
 using System.Collections.Generic;
 using UnityEngine;
+using System.IO;
 
 public class ItemDatabase : MonoBehaviour
 {
     public static ItemDatabase Instance;
-
+    [SerializeField] private string resourcesFolder;
     private Dictionary<int, Items> itemsByID = new Dictionary<int, Items>();
-    private Dictionary<string, Items> itemsByName = new Dictionary<string, Items>();
 
     private void Awake()
     {
@@ -15,6 +16,35 @@ public class ItemDatabase : MonoBehaviour
         else
             Destroy(gameObject);
     }
+
+    private void Start()
+    {
+        LoadItemsFromResources(resourcesFolder);
+    }
+
+    [ContextMenu("Debug Print All Item IDs (Sorted)")]
+    public void DebugPrintAllItemIDsSorted()
+    {
+        Debug.Log("===== ITEM DATABASE ID DUMP (SORTED) START =====");
+
+        if (itemsByID.Count == 0)
+        {
+            Debug.LogWarning("Item database is empty.");
+            return;
+        }
+
+        var sortedIDs = itemsByID.Keys.OrderBy(id => id);
+
+        foreach (int id in sortedIDs)
+        {
+            Items item = itemsByID[id];
+            Debug.Log($"Item ID: {id} | Name: {item.name}");
+        }
+
+        Debug.Log($"Total Items Loaded: {itemsByID.Count}");
+        Debug.Log("===== ITEM DATABASE ID DUMP END =====");
+    }
+
 
     public void LoadItemsFromResources(string folderPath)
     {
@@ -37,9 +67,6 @@ public class ItemDatabase : MonoBehaviour
         }
 
         itemsByID[item.itemID] = item;
-
-        if (!itemsByName.ContainsKey(item.itemName))
-            itemsByName[item.itemName] = item;
     }
 
     public Items GetItemByID(int id)
@@ -48,15 +75,6 @@ public class ItemDatabase : MonoBehaviour
             return item;
 
         Debug.LogWarning($"Item ID not found: {id}");
-        return null;
-    }
-
-    public Items GetItemByName(string name)
-    {
-        if (itemsByName.TryGetValue(name, out var item))
-            return item;
-
-        Debug.LogWarning($"Item name not found: {name}");
         return null;
     }
 }

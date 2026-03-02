@@ -13,14 +13,13 @@ MonoBehaviour:
   m_Name: TinDust
   m_EditorClassIdentifier: 
   type: 0
-  itemID: 4
-  itemName: Grounded Tin Dust
-  itemDescription: Now after griding the ore is this dust
+  itemID: 3
+  itemName: Poor Mans Tin Dust
+  itemDescription: 
   cost: 1
-  nextItem: {fileID: 11400000, guid: bfe6d79ec45b94b488e7bdaf258a971f, type: 2}
   itemSprite: {fileID: 21300000, guid: 547506ae0b9b2dc428a703cd6c18d997, type: 3}
   model: {fileID: 3079857997730382848, guid: 2eead3d20b4c04c4c95e0952f8321e48, type: 3}
-  CanGoInSmeltery: 0
-  impuritySmash: 0
-  heatLevel: 30
-  heatStage: 0
+  currentPhase: 0
+  heatTimer: 0
+  condensed: 0
+  baseColor: {r: 0, g: 0, b: 0, a: 0}

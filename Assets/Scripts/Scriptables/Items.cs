@@ -1,10 +1,17 @@
 using UnityEngine;
 
+
+//Item Type determines:
+/*  If an item gets destroyed or not and at what temp
+ *  it also determines if it can be consumed, put into hand, also some other scripts 
+ *  
+ */
 public enum Itemtype
 {
-    Metals,
-    Dusts,
+    Dust,
     Bloom,
+    Chunk,
+    Metal,
     Potions,
     Equipment,
     Tools,

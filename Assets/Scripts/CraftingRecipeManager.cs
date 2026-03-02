@@ -26,16 +26,49 @@ public class CraftingRecipeManager : MonoBehaviour
     {
         string dirName = Path.Combine(Application.streamingAssetsPath, folderDirName);
         LoadRecipesFromFolder(dirName);
-        try
+        string modDirName = Path.Combine(Application.persistentDataPath, folderDirName);
+
+        if (Directory.Exists(modDirName))
         {
-            string modDirName = Path.Combine(Application.persistentDataPath, folderDirName);
             LoadRecipesFromFolder(modDirName);
         }
-        catch
-        {
 
+    }
+
+    [ContextMenu("Debug Print All Recipes")]
+    public void DebugPrintAllRecipes()
+    {
+        Debug.Log("===== RECIPE DUMP START =====");
+
+        // Single Input Recipes
+        foreach (var phasePair in singleInputRecipes)
+        {
+            PhaseType phase = phasePair.Key;
+            var dict = phasePair.Value;
+
+            foreach (var recipePair in dict)
+            {
+                Recipe recipe = recipePair.Value;
+
+                string inputs = string.Join(", ", recipe.inputItemIDs);
+                Debug.Log($"[Single] Phase: {phase} | Inputs: [{inputs}] | Output: {recipe.outputItemID}");
+            }
         }
-        
+
+        // Multi Input Recipes
+        foreach (var phasePair in multiInputRecipes)
+        {
+            PhaseType phase = phasePair.Key;
+            var list = phasePair.Value;
+
+            foreach (var recipe in list)
+            {
+                string inputs = string.Join(", ", recipe.inputItemIDs);
+                Debug.Log($"[Multi ] Phase: {phase} | Inputs: [{inputs}] | Output: {recipe.outputItemID}");
+            }
+        }
+
+        Debug.Log("===== RECIPE DUMP END =====");
     }
 
     public void LoadRecipesFromFolder(string folderPath)

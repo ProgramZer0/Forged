@@ -13,14 +13,13 @@ MonoBehaviour:
   m_Name: Bowl
   m_EditorClassIdentifier: 
   type: 6
-  itemID: 103
+  itemID: 2103
   itemName: Bowl
   itemDescription: Weird bowl made of a weird metal
   cost: 0
-  nextItem: {fileID: 0}
   itemSprite: {fileID: 0}
   model: {fileID: 8076360190561802726, guid: 8a9d9f2b125e4014a82d7eaf8661a573, type: 3}
-  CanGoInSmeltery: 0
-  impuritySmash: 0
-  heatLevel: 0
-  heatStage: 0
+  currentPhase: 0
+  heatTimer: 0
+  condensed: 0
+  baseColor: {r: 0, g: 0, b: 0, a: 0}

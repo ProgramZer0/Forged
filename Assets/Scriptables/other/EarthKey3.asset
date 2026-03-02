@@ -13,14 +13,13 @@ MonoBehaviour:
   m_Name: EarthKey3
   m_EditorClassIdentifier: 
   type: 6
-  itemID: 101
+  itemID: 1101
   itemName: Earth Key 3
   itemDescription: This key looks like a hanger
   cost: 
-  nextItem: {fileID: 0}
   itemSprite: {fileID: 0}
   model: {fileID: 6709619480619279107, guid: d3db31471e955104fa8230e282c65a99, type: 3}
-  CanGoInSmeltery: 0
-  impuritySmash: 0
-  heatLevel: 0
-  heatStage: 0
+  currentPhase: 0
+  heatTimer: 0
+  condensed: 0
+  baseColor: {r: 0, g: 0, b: 0, a: 0}

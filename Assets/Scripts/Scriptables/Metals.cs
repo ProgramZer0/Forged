@@ -10,7 +10,7 @@ public class Metals : Items
     public Mesh metalMesh;
     public void Awake()
     {
-        type = Itemtype.Metals;
+        type = Itemtype.Metal;
     }
 }
 

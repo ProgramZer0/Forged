@@ -12,16 +12,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b83ad78a2162b6f498fabbd5074235a0, type: 3}
   m_Name: CopperOre
   m_EditorClassIdentifier: 
-  type: 7
-  itemID: 0
+  type: 8
+  itemID: 6
   itemName: Electric Copper Ore
-  itemDescription: Very common metal found in these mountains even the poor think
-    its cheap!
+  itemDescription: 
   cost: 1
-  nextItem: {fileID: 0}
   itemSprite: {fileID: 0}
   model: {fileID: 0}
-  CanGoInSmeltery: 0
-  impuritySmash: 0
-  heatLevel: 0
-  heatStage: 0
+  currentPhase: 0
+  heatTimer: 0
+  condensed: 0
+  baseColor: {r: 0, g: 0, b: 0, a: 0}

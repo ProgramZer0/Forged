@@ -13,14 +13,13 @@ MonoBehaviour:
   m_Name: Vase
   m_EditorClassIdentifier: 
   type: 6
-  itemID: 111
+  itemID: 2111
   itemName: Vase
   itemDescription: Its a weird looking purple vase
   cost: 0
-  nextItem: {fileID: 0}
   itemSprite: {fileID: 0}
   model: {fileID: 6793268738842963990, guid: db90c5d849c1ffc4c99af9e7f61b5fec, type: 3}
-  CanGoInSmeltery: 0
-  impuritySmash: 0
-  heatLevel: 0
-  heatStage: 0
+  currentPhase: 0
+  heatTimer: 0
+  condensed: 0
+  baseColor: {r: 0, g: 0, b: 0, a: 0}

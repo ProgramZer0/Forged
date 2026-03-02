@@ -13,14 +13,13 @@ MonoBehaviour:
   m_Name: Cup
   m_EditorClassIdentifier: 
   type: 6
-  itemID: 104
+  itemID: 2104
   itemName: Cup
   itemDescription: 'an empty Cup '
   cost: 
-  nextItem: {fileID: 0}
   itemSprite: {fileID: 0}
   model: {fileID: 8515212483884050420, guid: 185b5e50ba1373347832e329543a20bf, type: 3}
-  CanGoInSmeltery: 0
-  impuritySmash: 0
-  heatLevel: 0
-  heatStage: 0
+  currentPhase: 0
+  heatTimer: 0
+  condensed: 0
+  baseColor: {r: 0, g: 0, b: 0, a: 0}
