@@ -106,18 +106,11 @@ public class WorkstationScript : MonoBehaviour
     private Items itemOnTongs;
     private GameObject objOnAnvil;
     private GameObject objOnTongs;
-    private Vector3[] vertix;
-    private Vector3 tempVertex;
     private Vector3 dragOffset;
     private Plane dragPlane;
-    private Vector3 dragVelocity;
-    private int verticalRotationIndex = 0; // 0–3
     private Vector3 currentRotateAxis = Vector3.up; // current axis for RotateSide
-    private int flipIndex = 0; // 0–3 (if needed)
-    private Vector3 currentTopAxis = Vector3.up;
     private Vector3[] localAxes = new Vector3[3];
     private int currentAxisIndex = 0;
-    private Recipe currentRecipe;
     private Mesh workingMesh;
     private float originalHeight;
 

@@ -212,11 +212,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 51b6a62a69e10244d953cf6ba852c50d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::OreSplitter
-  chunkCount: 5
+  chunkCount: 10
   chunkPrefab: {fileID: 5223467113343884243, guid: 04a337b2e0bd65a4faf47d2f34f5f1a8, type: 3}
   spawnRadius: 0.05
-  springForce: 50
-  springDamper: 5
+  springForce: 10
+  springDamper: 10
   pickupLayer:
     serializedVersion: 2
     m_Bits: 512

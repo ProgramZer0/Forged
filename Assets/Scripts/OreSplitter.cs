@@ -9,6 +9,7 @@ public class OreSplitter : MonoBehaviour
     public float spawnRadius = 0.05f;
     public float springForce = 50f;
     public float springDamper = 5f;
+    public float maxDistance = 0.1f;
 
     [Header("Layers")]
     public LayerMask pickupLayer;
@@ -108,31 +109,50 @@ public class OreSplitter : MonoBehaviour
             chunkMesh.RecalculateNormals();
             chunkMesh.RecalculateBounds();
 
-            MeshFilter mf = chunk.GetComponent<MeshFilter>();
+
+            MeshFilter mf;
+            MeshCollider col;
+
+            Rigidbody rb;
+
+            if (i == 0)
+            {
+                rb = gameObject.GetComponent<Rigidbody>();
+                Destroy(gameObject.GetComponent<Collider>());
+                mf = gameObject.AddComponent<MeshFilter>();
+                col = gameObject.AddComponent<MeshCollider>();
+                rb.mass = 1;
+                Destroy(chunk);
+            }
+            else
+            {
+                mf = chunk.GetComponent<MeshFilter>();
+                rb = chunk.GetComponent<Rigidbody>();
+                col = chunk.GetComponent<MeshCollider>();
+                if (col == null) col = chunk.AddComponent<MeshCollider>();
+
+                rb.mass = 0.2f;
+
+                SpringJoint sj = chunk.AddComponent<SpringJoint>();
+                sj.connectedBody = rootRb;
+                sj.spring = springForce;
+                sj.damper = springDamper;
+                sj.maxDistance = maxDistance;
+                sj.autoConfigureConnectedAnchor = true;
+                chunk.transform.localPosition += Random.insideUnitSphere * spawnRadius;
+                chunks.Add(chunk);
+            }
+
+
             mf.mesh = chunkMesh;
             chunk.GetComponent<MeshRenderer>().material =
                 originalMeshFilter.GetComponent<MeshRenderer>().material;
 
-            Rigidbody rb = chunk.GetComponent<Rigidbody>();
-            if (rb == null) rb = chunk.AddComponent<Rigidbody>();
-            rb.mass = 0.3f;
             rb.linearDamping = 2f;
             rb.angularDamping = 5f;
-
-            MeshCollider col = chunk.GetComponent<MeshCollider>();
-            if (col == null) col = chunk.AddComponent<MeshCollider>();
+            
             col.sharedMesh = chunkMesh;
             col.convex = true;
-
-            SpringJoint sj = chunk.AddComponent<SpringJoint>();
-            sj.connectedBody = rootRb;
-            sj.spring = springForce;
-            sj.damper = springDamper;
-            sj.autoConfigureConnectedAnchor = true;
-
-            chunk.transform.localPosition += Random.insideUnitSphere * spawnRadius;
-
-            chunks.Add(chunk);
         }
 
         originalMeshFilter.gameObject.SetActive(false);
@@ -140,13 +160,29 @@ public class OreSplitter : MonoBehaviour
 
     public void CompressChunks()
     {
+        Debug.Log("compressing");
         foreach (var chunk in chunks)
         {
             SpringJoint sj = chunk.GetComponent<SpringJoint>();
             if (sj != null)
             {
                 sj.spring = springForce * 4f;
-                sj.damper = springDamper * 4f;
+                sj.damper = 1;
+                sj.maxDistance = 0;
+            }
+        }
+    }
+    public void DecompressChunks()
+    {
+        Debug.Log("decompressing");
+        foreach (var chunk in chunks)
+        {
+            SpringJoint sj = chunk.GetComponent<SpringJoint>();
+            if (sj != null)
+            {
+                sj.spring = springForce;
+                sj.damper = springDamper;
+                sj.maxDistance = maxDistance;
             }
         }
     }
@@ -316,7 +352,7 @@ public class OreSplitter : MonoBehaviour
         // Generate UVs via triplanar projection
         Vector3[] normals = mesh.normals;
         Vector2[] projectedUVs = new Vector2[flatVerts.Length];
-        float textureScale = 2.0f;
+        float textureScale = 2.3f;
 
         for (int i = 0; i < flatVerts.Length; i += 3)
         {

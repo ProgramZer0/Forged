@@ -1,119 +1,222 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class CameraMovements : MonoBehaviour
 {
-    [SerializeField] private Slider sense;
-    [SerializeField] private GameObject playerlocation;
-    [SerializeField] private LayerMask ItemPickupLayer;
-    [SerializeField] private GameObject PickUpObject;
+    [Header("Player")]
+    [SerializeField] private Controls playerControls;
+
+    [Header("Camera")]
+    [SerializeField] private Slider sensitivitySlider;
+
+    [Header("Pickup")]
+    [SerializeField] private LayerMask itemPickupLayer;
+    [SerializeField] private GameObject pickUpTarget;
     [SerializeField] private GameObject pickupPrompt;
-    [SerializeField] private Controls PlayerControls;
+    [SerializeField] private float pickupRange = 7f;
+    [SerializeField] private float pickupSpeed = 100f;
+    [SerializeField] private float dropGracePeriod = 3f;
+    [SerializeField] private Toggle holdToPickup;
 
-    float xRotation;
-    float yRotation;
-    private bool mouseclick1 = false;
-    private bool Buttonhit = false;
-    private float pickupRange = 7f;
-    private float speed = 100f;
+    // Camera rotation
+    private float xRotation;
+    private float yRotation;
 
+    // Interaction state
+    private bool isHoldingMouse;
+    private bool wheelButtonPressed;
+    private bool isHoldingObject;
     private Rigidbody heldObject;
+    private OreSplitter heldOreSplitter;
+
+    // Grace period
+    private float gracePeriodTimer;
+    private bool inGracePeriod;
+
+    // Cached components
+    private Text promptText;
+    private Animator playerAnimator;
+
+    private void Awake()
+    {
+        promptText = pickupPrompt.GetComponentInChildren<Text>();
+        playerAnimator = playerControls.GetAnimator();
+    }
 
     private void Update()
     {
-        float mouseX = Input.GetAxisRaw("Mouse X") * Time.deltaTime * sense.value * 20;
-        float mouseY = Input.GetAxisRaw("Mouse Y") * Time.deltaTime * sense.value * 20;
-        yRotation += mouseX;
-        xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
-
-        transform.rotation = Quaternion.Euler(xRotation, yRotation, 0);
-        playerlocation.transform.rotation = Quaternion.Euler(0, yRotation, 0);
-
-        if (Input.GetKeyDown(KeyCode.Mouse0))
-            mouseclick1 = true;
-        if (Input.GetKeyUp(KeyCode.Mouse0))
-            mouseclick1 = false;
+        HandleCameraRotation();
+        HandleMouseInput();
+        HandleGracePeriod();
     }
 
     private void FixedUpdate()
     {
-        if (PlayerControls.getHotbarSelected() == 0)
+        if (playerControls.getHotbarSelected() != 0) return;
+
+        HandleRaycast();
+        HandleHeldObject();
+    }
+
+    private void HandleCameraRotation()
+    {
+        float sensitivity = sensitivitySlider.value * 20 * Time.deltaTime;
+        yRotation += Input.GetAxisRaw("Mouse X") * sensitivity;
+        xRotation -= Input.GetAxisRaw("Mouse Y") * sensitivity;
+        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
+
+        transform.rotation = Quaternion.Euler(xRotation, yRotation, 0);
+    }
+
+    private void HandleMouseInput()
+    {
+        if (holdToPickup.isOn)
         {
-
-            RaycastHit hit;
-            
-            Debug.DrawRay(transform.position, transform.forward, Color.green, 2, true);
-            if (Physics.Raycast(transform.position, transform.forward, out hit, pickupRange, ItemPickupLayer))
+            if (Input.GetKeyDown(KeyCode.Mouse0)) isHoldingMouse = true;
+            if (Input.GetKeyUp(KeyCode.Mouse0))
             {
-                //Debug.Log(hit.collider.gameObject);
-
-                if (hit.transform.TryGetComponent(out Item hit2)){
-                    pickupPrompt.SetActive(true);
-                    pickupPrompt.GetComponentInChildren<Text>().text = "Hold mouse 1 to pick up " + hit2.name;
-                }
+                isHoldingMouse = false;
+                if (isHoldingObject) HandleRelease();
             }
-            if (mouseclick1)
+        }
+        else
+        {
+            if (Input.GetKeyDown(KeyCode.Mouse0))
             {
-                //Debug.Log(hit.collider.gameObject);
+                if (isHoldingObject)
+                    HandleRelease();
+                else
+                    isHoldingMouse = true;
+            }
+        }
+    }
 
-                try
+    private void HandleGracePeriod()
+    {
+        if (!inGracePeriod) return;
+
+        gracePeriodTimer -= Time.deltaTime;
+
+        if (gracePeriodTimer <= 0)
+        {
+            // Raycast from held object back to player
+            Vector3 directionToPlayer = transform.position - heldObject.position;
+            if (Physics.Raycast(heldObject.position, directionToPlayer.normalized, out RaycastHit hit, directionToPlayer.magnitude))
+            {
+                if (hit.transform == transform || hit.transform == playerControls.transform)
                 {
-                    if (hit.collider.gameObject.name.Contains("WheelButton"))
-                    {
-                        if (!Buttonhit)
-                        {
-                            Buttonhit = true;
-
-                            Debug.Log("Is a Wheel");
-
-                            hit.collider.gameObject.GetComponent<WheelButton>().Turn();
-                        }
-                    }
-                    else if (heldObject == null)
-                    {
-                        heldObject = hit.rigidbody;
-
-                        heldObject.useGravity = false;
-                        heldObject.linearDamping = 10;
-                    }
-                }
-                catch 
-                { 
-                    //nothin
+                    // Player is visible, reset timer
+                    gracePeriodTimer = dropGracePeriod;
+                    return;
                 }
             }
-            else {
-                if (Buttonhit)
-                {
-                    Buttonhit = false;
-                }
-                try
-                {
-                    PlayerControls.GetAnimator().SetBool("Interacting", false);
-                    heldObject.linearDamping = 1;
-                    heldObject.useGravity = true;
-                }
-                catch {
-                    //nothing
-                }
-                heldObject = null;
-            }
 
-            if (heldObject)
+            inGracePeriod = false;
+            if (holdToPickup && !isHoldingMouse)
+                HandleRelease();
+            else if (!holdToPickup)
+                HandleRelease();
+        }
+    }
+
+
+    private void HandleRaycast()
+    {
+        if (Physics.Raycast(transform.position, transform.forward, out RaycastHit hit, pickupRange, itemPickupLayer))
+        {
+            inGracePeriod = false;
+            gracePeriodTimer = dropGracePeriod;
+
+            UpdatePickupPrompt(hit);
+
+            if (isHoldingMouse)
+                HandleInteraction(hit);
+        }
+        else
+        {
+            if (isHoldingObject && !inGracePeriod)
             {
-                pickupPrompt.SetActive(false);
-                PlayerControls.GetAnimator().SetBool("Interacting", true);
-                heldObject.AddForce((PickUpObject.transform.position - heldObject.position) * speed);
+                inGracePeriod = true;
+                gracePeriodTimer = dropGracePeriod;
             }
-            else
+
+            if (!isHoldingObject)
             {
-                pickupPrompt.GetComponentInChildren<Text>().text = "";
+                promptText.text = "";
                 pickupPrompt.SetActive(false);
             }
         }
+    }
+
+    private void UpdatePickupPrompt(RaycastHit hit)
+    {
+        if (heldObject != null) return;
+
+        pickupPrompt.SetActive(true);
+        promptText.text = hit.transform.TryGetComponent(out Item item)
+            ? "Hold mouse 1 to pick up " + item.item.name
+            : "Hold mouse 1 to pick up " + hit.collider.gameObject.name;
+    }
+
+    private void HandleInteraction(RaycastHit hit)
+    {
+        if (hit.collider.gameObject.TryGetComponent(out WheelButton wheel))
+        {
+            if (!wheelButtonPressed)
+            {
+                wheelButtonPressed = true;
+                wheel.Turn();
+            }
+        }
+        else if (heldObject == null && hit.rigidbody != null)
+        {
+            PickUpObject(hit);
+        }
+    }
+
+    private void PickUpObject(RaycastHit hit)
+    {
+        heldObject = hit.rigidbody;
+        heldObject.useGravity = false;
+        heldObject.linearDamping = 10;
+        isHoldingObject = true;
+        isHoldingMouse = false;
+
+        heldOreSplitter = hit.transform.GetComponentInParent<OreSplitter>();
+        if (heldOreSplitter != null)
+            heldOreSplitter.CompressChunks();
+    }
+
+    private void HandleRelease()
+    {
+        if (heldObject == null) return;
+
+        heldObject.useGravity = true;
+        heldObject.linearDamping = 1;
+        heldObject = null;
+        isHoldingObject = false;
+        inGracePeriod = false;
+        gracePeriodTimer = 0;
+
+        playerAnimator.SetBool("Interacting", false);
+        pickupPrompt.SetActive(false);
+
+        if (!isHoldingMouse && wheelButtonPressed)
+            wheelButtonPressed = false;
+
+        if (heldOreSplitter != null)
+        {
+            heldOreSplitter.DecompressChunks();
+            heldOreSplitter = null;
+        }
+    }
+
+    private void HandleHeldObject()
+    {
+        if (heldObject == null) return;
+
+        pickupPrompt.SetActive(false);
+        playerAnimator.SetBool("Interacting", true);
+        heldObject.AddForce((pickUpTarget.transform.position - heldObject.position) * pickupSpeed);
     }
 }
