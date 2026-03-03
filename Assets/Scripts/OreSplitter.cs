@@ -166,8 +166,8 @@ public class OreSplitter : MonoBehaviour
             SpringJoint sj = chunk.GetComponent<SpringJoint>();
             if (sj != null)
             {
-                sj.spring = springForce * 4f;
-                sj.damper = 1;
+                sj.spring = springForce * 15f;
+                sj.damper = 0;
                 sj.maxDistance = 0;
             }
         }
