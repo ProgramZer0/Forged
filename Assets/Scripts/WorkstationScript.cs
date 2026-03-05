@@ -420,7 +420,7 @@ public class WorkstationScript : MonoBehaviour
 
     private bool HandleShapingEditor()
     {
-        if (objOnAnvil == null) return false;
+       // if (objOnAnvil == null) return false;
 
         Ray ray = mainCam.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
@@ -465,9 +465,37 @@ public class WorkstationScript : MonoBehaviour
         return false;
     }
 
+    private bool TryToGrabItem(RaycastHit hit)
+    {
+        //Debug.Log("trying to get item");
+        Item item = GetComponent<Item>();
+        if(item != null)
+        {
+            Debug.Log("found item on main");
+            itemOnAnvil = item.item;
+            objOnAnvil = hit.collider.gameObject;
+            return true;
+        }
+        else
+        {
+            Debug.Log(hit.transform.parent);
+
+            item = hit.transform.parent.GetComponent<Item>();
+            if (item != null)
+            {
+                Debug.Log("found item on parent");
+                itemOnAnvil = item.item;
+                objOnAnvil = hit.transform.parent.gameObject;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private bool HandleCrafting()
     {
-        if (objOnAnvil == null) return false;
+        //if (objOnAnvil == null) return false;
 
         Ray ray = mainCam.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
@@ -475,61 +503,68 @@ public class WorkstationScript : MonoBehaviour
         if (Physics.Raycast(ray, out hit, rangeInteraction, itemMask))
         {
             Debug.Log("hit item " + hit.collider.gameObject.name);
-            if (hit.collider.gameObject == objOnAnvil)
+            Debug.Log("obj is the obj on anvil:  " + hit.collider.gameObject.name);
+            
+            if(itemOnAnvil == null || objOnAnvil == null || hit.collider.gameObject != objOnAnvil)
             {
-                Debug.Log("obj is the obj on anvil:  " + hit.collider.gameObject.name);
-                Recipe condensingRecipe = recipeManager.FindRecipe(PhaseType.Condensing, itemOnAnvil.itemID);
-                Recipe anvilRecipe = recipeManager.FindRecipe(PhaseType.AnvilHammering, itemOnAnvil.itemID);
-                Recipe shapingRecipe = recipeManager.FindRecipe(PhaseType.Shaping, itemOnAnvil.itemID);
+                //Debug.Log("hit is: " + hit.transform.gameObject);
+                if (!TryToGrabItem(hit))
+                    return false;
+            }
+            Debug.Log("all valid entering crafting");
+
+            Recipe condensingRecipe = recipeManager.FindRecipe(PhaseType.Condensing, itemOnAnvil.itemID);
+            Recipe anvilRecipe = recipeManager.FindRecipe(PhaseType.AnvilHammering, itemOnAnvil.itemID);
+            Recipe shapingRecipe = recipeManager.FindRecipe(PhaseType.Shaping, itemOnAnvil.itemID);
 
 
 
-                if(anvilRecipe != null)
+            if (anvilRecipe != null)
+            {
+                Debug.Log("anvil recipe exsist ID: Input Item: " + anvilRecipe.inputItemIDs[0] +
+                    ", requiredValue: " + anvilRecipe.requiredValue + ", output Item: " + anvilRecipe.outputItemID);
+
+                Items newItem = itemDatabase.GetItemByID(anvilRecipe.outputItemID);
+                Debug.Log("Item: " + newItem.name);
+
+                if (newItem != null)
                 {
-                    Debug.Log("anvil recipe exsist ID: Input Item: " + anvilRecipe.inputItemIDs[0] +
-                        ", requiredValue: " + anvilRecipe.requiredValue + ", output Item: " + anvilRecipe.outputItemID);
+                    ModelChange(newItem, objOnAnvil, hit);
 
-                    Items newItem = itemDatabase.GetItemByID(anvilRecipe.outputItemID);
-                    Debug.Log("Item: " + newItem.name);
-
-                    if (newItem != null)
-                    {
-                        ModelChange(newItem, hit.collider.gameObject);
-                        itemOnAnvil = newItem;
-                    }
+                    itemOnAnvil = newItem;
                 }
-                else if (shapingRecipe != null)
-                {
-                    Debug.Log("shaping recipe exsist ID:" + anvilRecipe.recipeID);
+            }
+            else if (shapingRecipe != null)
+            {
+                Debug.Log("shaping recipe exsist ID:" + anvilRecipe.recipeID);
 
-                    return HandleShapingEditor(shapingRecipe, hit);
-                }
-                else
+                return HandleShapingEditor(shapingRecipe, hit);
+            }
+            else
+            {
+                //needs heat 
+                if (itemOnAnvil.heatTimer >= 0)
                 {
-                    //needs heat 
-                    if (itemOnAnvil.heatTimer >= 0)
+                    if (condensingRecipe != null)
                     {
-                        if (condensingRecipe != null)
+                        Debug.Log("condencing recipe exsist ID:" + anvilRecipe.recipeID);
+
+                        Recipe heatingRecipe = recipeManager.FindRecipe(PhaseType.Heating, itemOnAnvil.itemID);
+                        if (heatingRecipe != null)
                         {
-                            Debug.Log("condencing recipe exsist ID:" + anvilRecipe.recipeID);
+                            float tempNeeded = heatingRecipe.requiredValue * 20;
 
-                            Recipe heatingRecipe = recipeManager.FindRecipe(PhaseType.Heating, itemOnAnvil.itemID);
-                            if (heatingRecipe != null)
+                            if (itemOnAnvil.heatTimer >= tempNeeded)
                             {
-                                float tempNeeded = heatingRecipe.requiredValue * 20;
-
-                                if (itemOnAnvil.heatTimer >= tempNeeded)
-                                {
-                                    CondenseItem(hit, condensingRecipe);
-                                    return true;
-                                }
-                                // not high enough heat
+                                CondenseItem(hit, condensingRecipe);
+                                return true;
                             }
-                            // if nothing else is found 
+                            // not high enough heat
                         }
+                        // if nothing else is found 
                     }
-                    //no heat at all
                 }
+                //no heat at all
             }
         }
         return false;
@@ -559,7 +594,7 @@ public class WorkstationScript : MonoBehaviour
         if (currentSmithingMode == SmithingMode.Normal)
         {
             scale = GetNormalModeScaleFromProgress(itemOnAnvil.condensed);
-            objOnAnvil.transform.localScale = scale;
+            hit.collider.gameObject.transform.localScale = scale;
 
             if (itemOnAnvil.condensed >= targetPercent)
             {
@@ -594,8 +629,8 @@ public class WorkstationScript : MonoBehaviour
         // ----- Mesh Deformation -----
         Vector3[] vertices = workingMesh.vertices;
 
-        Vector3 localHit = objOnAnvil.transform.InverseTransformPoint(hit.point);
-        Vector3 localDirection = objOnAnvil.transform.InverseTransformDirection(Vector3.down);
+        Vector3 localHit = hit.collider.gameObject.transform.InverseTransformPoint(hit.point);
+        Vector3 localDirection = hit.collider.gameObject.transform.InverseTransformDirection(Vector3.down);
 
         float maxHeight = Mathf.Lerp(
             originalHeight,
@@ -641,38 +676,64 @@ public class WorkstationScript : MonoBehaviour
         return new Vector3(width, height, length);
     }
 
-    private void ModelChange(Items changeTo, GameObject obj)
+    private void ModelChange(Items changeTo, GameObject obj, RaycastHit hit)
     {
-        Debug.Log("Changing Models: change to " + changeTo.name + ", from " + obj.GetComponent<Item>().item.name);
-        switch (changeTo.type)
+        if(obj == null)
         {
-            case Itemtype.Ore:
-                //this should never happen
-                break;
-            case Itemtype.Chunk:
-                if (obj.GetComponent<Item>().item.type == Itemtype.Ore)
-                    obj.GetComponent<OreSplitter>().SplitOre();
-                break;
-            case Itemtype.Dust:
-                //make dust from anything 
-                break;
-            case Itemtype.Metal:
-                if (obj.GetComponent<Item>().item.type == Itemtype.Dust)
+            var item = GetComponent<Item>().item;
+            if (item != null)
+            {
+                obj = hit.collider.gameObject;
+            }
+            else
+            {
+                item = GetComponentInParent<Item>().item;
+                if (item != null)
                 {
-                    //compress dust to metal
+                    obj = hit.transform.GetComponentInParent<GameObject>();
                 }
-                if (obj.GetComponent<Item>().item.type == Itemtype.Bloom)
-                {
-                    //making bloom texture change to metal texture
-                }
-                if (obj.GetComponent<Item>().item.type == Itemtype.Ore)
-                {
-                    //shape for moab stuff
-                }
-                break;
+            }
+        }
+        
+        if(obj != null)
+        {
+            Debug.Log("Changing Models: change to " + changeTo.name + ", from " + obj.GetComponent<Item>().item.name);
+            switch (changeTo.type)
+            {
+                case Itemtype.Ore:
+                    //this should never happen
+                    break;
+                case Itemtype.Chunk:
+                    if (obj.GetComponent<Item>().item.type == Itemtype.Ore)
+                        obj.GetComponent<OreSplitter>().SplitOre();
+                    break;
+                case Itemtype.Dust:
+
+                    Destroy(obj);
+                    Vector3 spawnPos = hit.transform.position;
+                    GameObject o = UnityEngine.Object.Instantiate(changeTo.model, spawnPos, Quaternion.Euler(0, 0, 0));
+
+                    objOnAnvil = o;
+                    obj = o;
+                    break;
+                case Itemtype.Metal:
+                    if (obj.GetComponent<Item>().item.type == Itemtype.Dust)
+                    {
+                        //compress dust to metal
+                    }
+                    if (obj.GetComponent<Item>().item.type == Itemtype.Bloom)
+                    {
+                        //making bloom texture change to metal texture
+                    }
+                    if (obj.GetComponent<Item>().item.type == Itemtype.Ore)
+                    {
+                        //shape for moab stuff
+                    }
+                    break;
             }
 
-        obj.GetComponent<Item>().item = changeTo;
+            obj.GetComponent<Item>().item = changeTo;
+        }
     }
 
     private Vector3 GetHitDirection(RaycastHit hit)

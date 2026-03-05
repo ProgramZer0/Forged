@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class OreSplitter : MonoBehaviour
+public class OreSplitter : MonoBehaviour, IPickup
 {
     [Header("Chunk Settings")]
     public int chunkCount = 5;
@@ -23,6 +23,14 @@ public class OreSplitter : MonoBehaviour
     {
         originalMeshFilter = GetComponentInChildren<MeshFilter>();
         rootRb = GetComponent<Rigidbody>();
+    }
+
+    private void OnDestroy()
+    {
+        foreach (var chunk in chunks)
+        {
+            Destroy(chunk);
+        }
     }
     public void SplitOre()
     {
@@ -157,8 +165,17 @@ public class OreSplitter : MonoBehaviour
 
         originalMeshFilter.gameObject.SetActive(false);
     }
+    public void Pickup()
+    {
+        CompressChunks();
+    }
 
-    public void CompressChunks()
+    public void Drop()
+    {
+        DecompressChunks();
+    }
+
+    private void CompressChunks()
     {
         Debug.Log("compressing");
         foreach (var chunk in chunks)
@@ -172,7 +189,7 @@ public class OreSplitter : MonoBehaviour
             }
         }
     }
-    public void DecompressChunks()
+    private void DecompressChunks()
     {
         Debug.Log("decompressing");
         foreach (var chunk in chunks)
@@ -401,4 +418,6 @@ public class OreSplitter : MonoBehaviour
             edgeData[key] = (a, b);
         }
     }
+
+    
 }

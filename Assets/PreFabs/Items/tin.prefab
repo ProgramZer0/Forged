@@ -217,6 +217,7 @@ MonoBehaviour:
   spawnRadius: 0.05
   springForce: 10
   springDamper: 10
+  maxDistance: 0.2
   pickupLayer:
     serializedVersion: 2
     m_Bits: 512

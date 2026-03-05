@@ -91,6 +91,7 @@ public class Bloomery : MonoBehaviour
     
     public bool AddItem(Items item)
     {
+        Debug.Log("adding item: " + item.itemName + " to bloomery");
         if (item == charcoalItem)
         {
             currentCharcoal++;
@@ -101,10 +102,10 @@ public class Bloomery : MonoBehaviour
 
         if (currentItem == null)
         {
+            Debug.Log("current is null adding item");
             Recipe bloomRecipe = recipeManager.FindRecipe(PhaseType.Bloomery, item.itemID);
 
             if (bloomRecipe == null) return false;
-            if (bloomRecipe.requiredValue > maxRatio) return false;
 
             currentRecipe = bloomRecipe;
 

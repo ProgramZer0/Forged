@@ -18,7 +18,7 @@ MonoBehaviour:
   itemDescription: 
   cost: 1
   itemSprite: {fileID: 21300000, guid: 547506ae0b9b2dc428a703cd6c18d997, type: 3}
-  model: {fileID: 3079857997730382848, guid: 2eead3d20b4c04c4c95e0952f8321e48, type: 3}
+  model: {fileID: 6744443469203831295, guid: 97ee68f7add1d1d47bbfa43c5bc19b38, type: 3}
   currentPhase: 0
   heatTimer: 0
   condensed: 0

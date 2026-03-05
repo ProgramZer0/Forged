@@ -19,6 +19,27 @@ public enum Itemtype
     Ore
 }
 
+public enum MetalType
+{
+    Tin,
+    Copper,
+    Bronze,
+    Iron,
+    Steel,
+    Silver,
+    Nickel,
+    Titanium,
+    Oppa,
+    Nameless,
+    Moabilimite,
+    Santillum,
+    Gold,
+    Electrum,
+    Lithium,
+    Poillum,
+    NONE
+}
+
 [CreateAssetMenu(fileName = "New Item", menuName = "Assets/Item")]
 public class Items : ScriptableObject
 {
@@ -31,6 +52,9 @@ public class Items : ScriptableObject
     public string cost;
     public Sprite itemSprite;
     public GameObject model;
+
+    [Header("Metal Settings")]
+    //public MetalType metalType = MetalType.NONE;
     public PhaseType currentPhase = PhaseType.NONE;
     public float heatTimer = 0f;
     public float condensed = 0f;

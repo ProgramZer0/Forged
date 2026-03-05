@@ -27,7 +27,7 @@ public class CameraMovements : MonoBehaviour
     private bool wheelButtonPressed;
     private bool isHoldingObject;
     private Rigidbody heldObject;
-    private OreSplitter heldOreSplitter;
+    private IPickup pickupInterface;
 
     // Grace period
     private float gracePeriodTimer;
@@ -94,11 +94,17 @@ public class CameraMovements : MonoBehaviour
     private void HandleGracePeriod()
     {
         if (!inGracePeriod) return;
-
+        if (heldObject == null)
+        {
+            inGracePeriod = false;
+            return;
+        }
+    
         gracePeriodTimer -= Time.deltaTime;
 
         if (gracePeriodTimer <= 0)
         {
+            
             // Raycast from held object back to player
             Vector3 directionToPlayer = transform.position - heldObject.position;
             if (Physics.Raycast(heldObject.position, directionToPlayer.normalized, out RaycastHit hit, directionToPlayer.magnitude))
@@ -176,16 +182,40 @@ public class CameraMovements : MonoBehaviour
 
     private void PickUpObject(RaycastHit hit)
     {
-        heldObject = hit.rigidbody;
-        heldObject.useGravity = false;
-        heldObject.linearDamping = 10;
-        isHoldingObject = true;
-        isHoldingMouse = false;
+        // Check if the hit object has a SpringJoint
+        if (hit.rigidbody.TryGetComponent(out SpringJoint spring))
+        {
+            // If it has a SpringJoint, grab the parent object
+            heldObject = hit.transform.parent.GetComponent<Rigidbody>();
+        }
+        else
+        {
+            // Otherwise, grab the object itself
+            heldObject = hit.rigidbody;
+        }
 
-        heldOreSplitter = hit.transform.GetComponentInParent<OreSplitter>();
-        if (heldOreSplitter != null)
-            heldOreSplitter.CompressChunks();
+        if (heldObject != null) // Ensure heldObject is valid
+        {
+            heldObject.useGravity = false;
+            heldObject.linearDamping = 10;
+            isHoldingObject = true;
+            isHoldingMouse = false;
+
+            pickupInterface = hit.transform.GetComponentInParent<IPickup>();
+            if (pickupInterface != null)
+            {
+                pickupInterface.Pickup();
+                return;
+            }
+            else
+            {
+                pickupInterface = hit.transform.GetComponent<IPickup>();
+                if (pickupInterface != null)
+                    pickupInterface.Pickup();
+            }
+        }
     }
+
 
     private void HandleRelease()
     {
@@ -204,10 +234,10 @@ public class CameraMovements : MonoBehaviour
         if (!isHoldingMouse && wheelButtonPressed)
             wheelButtonPressed = false;
 
-        if (heldOreSplitter != null)
+        if (pickupInterface != null)
         {
-            heldOreSplitter.DecompressChunks();
-            heldOreSplitter = null;
+            pickupInterface.Drop();
+            pickupInterface = null;
         }
     }
 
