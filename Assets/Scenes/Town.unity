@@ -1145,10 +1145,10 @@ MonoBehaviour:
   playerCam: {fileID: 1206607624}
   PlayerView:
     serializedVersion: 2
-    m_Bits: 7991
+    m_Bits: 16183
   CutSceneView:
     serializedVersion: 2
-    m_Bits: 7799
+    m_Bits: 15991
   CinimaCam: {fileID: 1723587941}
   hpandStaI: {fileID: 124470115}
   infoStat: {fileID: 1771673543}
@@ -14163,7 +14163,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1992619772}
+    m_TransformParent: {fileID: 751058503}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 66eb77c823e3e5f44a8d539e3786ff33, type: 3}
       propertyPath: m_RootOrder
@@ -14183,15 +14183,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 66eb77c823e3e5f44a8d539e3786ff33, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.98
+      value: -0.97998047
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 66eb77c823e3e5f44a8d539e3786ff33, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.64
+      value: -0.6399994
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 66eb77c823e3e5f44a8d539e3786ff33, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 6.7
+      value: 6.699951
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 66eb77c823e3e5f44a8d539e3786ff33, type: 3}
       propertyPath: m_LocalRotation.w
@@ -22323,7 +22323,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1992619772}
+    m_TransformParent: {fileID: 751058503}
     m_Modifications:
     - target: {fileID: -8679921383154817045, guid: 4f66abd7600821c4ea02b9cd0cc98503, type: 3}
       propertyPath: m_RootOrder
@@ -22343,15 +22343,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4f66abd7600821c4ea02b9cd0cc98503, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -2.69
+      value: -2.6899414
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4f66abd7600821c4ea02b9cd0cc98503, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.08
+      value: -0.08000183
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4f66abd7600821c4ea02b9cd0cc98503, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -1.99
+      value: -1.9899902
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 4f66abd7600821c4ea02b9cd0cc98503, type: 3}
       propertyPath: m_LocalRotation.w
@@ -35704,6 +35704,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 417781208}
   m_CullTransparentMesh: 1
+--- !u!1 &421724114
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 421724115}
+  m_Layer: 0
+  m_Name: Items
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &421724115
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 421724114}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 1182.0702, y: 46.36679, z: 1447.9333}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &423404086
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -58426,64 +58457,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.23156738, y: 0.51508695, z: 0.9225586}
   m_Center: {x: -0.0022176108, y: 0.0051722527, z: 0.038720705}
---- !u!114 &733786878
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 919132147773256649}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ceaa3d8ecb8c1084ba8a01f52031e1b6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  PlayerVCam: {fileID: 1723587941}
-  mainVCam: {fileID: 348041829}
-  anvilVCam: {fileID: 1648126013}
-  SmeltVCam: {fileID: 2034674065}
-  mainCam: {fileID: 1206607624}
-  SmeltB: {fileID: 591953655}
-  AnvilB: {fileID: 760419157}
-  EditB: {fileID: 404430039}
-  ChangeSide: {fileID: 1277271811}
-  ChangeAxisB: {fileID: 930725037}
-  ResetButton: {fileID: 855319256}
-  EditModeSwitch: {fileID: 1810217019}
-  MovePivotPoint: {fileID: 1486681136}
-  ExitEditMode: {fileID: 613582613}
-  Force: {fileID: 1730020182}
-  TongButton: {fileID: 1008259382}
-  Emtpy: {fileID: 11400000, guid: 5d292342d5eccec42b40c5a49660334a, type: 2}
-  WorkstationUI: {fileID: 655690727}
-  WorkstationButtons: {fileID: 1431444449}
-  AnvilUI: {fileID: 990129400}
-  AnvilEditUI: {fileID: 1783672577}
-  SmeltUI: {fileID: 1226704604}
-  AnvilEditModeText: {fileID: 210291159}
-  displayObj: {fileID: 2126561992}
-  AnvilPos: {fileID: 914790398}
-  Hammer: {fileID: 6694017316723735068}
-  Tongs: {fileID: 6104659136301275217}
-  TongPlacement: {fileID: 286908174}
-  playerController: {fileID: 22095980}
-  smelteryScript: {fileID: 919132148961809699}
-  anvilPlace: {fileID: 914790401}
-  itemMask:
-    serializedVersion: 2
-    m_Bits: 512
-  hammerOBJ: {fileID: 786354280}
-  hammerSwingPoint: {fileID: 341245839}
-  GUI: {fileID: 1243795813}
-  EditCameraController: {fileID: 1648126016}
-  recipeManager: {fileID: 439208263}
-  itemDatabase: {fileID: 439208265}
-  hammerFlatRotationValue: {x: 20, y: -90, z: 30}
-  hammerPeenRotationValue: {x: 0, y: 90, z: -30}
-  minClickWaitTime: 0.2
-  rangeInteraction: 5
-  currentSmithingMode: 0
-  currentAnvilMode: 3
 --- !u!4 &737892834 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 180933823371799393, guid: 2f4554e257158c14b8fa1905df830ade, type: 3}
@@ -58932,6 +58905,87 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4077304333373518943, guid: 08c79e7a824720342bf9bddeb252377b, type: 3}
   m_PrefabInstance: {fileID: 747953948}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &751058502
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 751058503}
+  - component: {fileID: 751058504}
+  m_Layer: 0
+  m_Name: MainForgingArea
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &751058503
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 751058502}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 543450652684242840}
+  - {fileID: 1340343459}
+  - {fileID: 543450651759929715}
+  - {fileID: 1078749631}
+  m_Father: {fileID: 1992619772}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &751058504
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 751058502}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ceaa3d8ecb8c1084ba8a01f52031e1b6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  PlayerVCam: {fileID: 1723587941}
+  mainVCam: {fileID: 348041829}
+  anvilVCam: {fileID: 1648126013}
+  SmeltVCam: {fileID: 2034674065}
+  mainCam: {fileID: 1206607624}
+  itemAndAnvilMask:
+    serializedVersion: 2
+    m_Bits: 8704
+  SmeltB: {fileID: 591953655}
+  AnvilB: {fileID: 760419157}
+  EditB: {fileID: 404430039}
+  TongButton: {fileID: 1008259382}
+  Emtpy: {fileID: 11400000, guid: 5d292342d5eccec42b40c5a49660334a, type: 2}
+  minClickWaitTime: 0.2
+  WorkstationUI: {fileID: 655690727}
+  WorkstationButtons: {fileID: 1431444449}
+  AnvilPos: {fileID: 8164078559481678608}
+  AnvilUI: {fileID: 990129400}
+  AnvilEditUI: {fileID: 1783672577}
+  SmeltUI: {fileID: 1226704604}
+  displayObj: {fileID: 2126561992}
+  Hammer: {fileID: 6694017316723735068}
+  Tongs: {fileID: 6104659136301275217}
+  TongPlacement: {fileID: 286908174}
+  playerController: {fileID: 22095980}
+  smelteryScript: {fileID: 919132148961809699}
+  anvilPlace: {fileID: 914790401}
+  anvilManger: {fileID: 919132147773256651}
+  anvilCrafter: {fileID: 919132147773256650}
+  itemDefaultParents: {fileID: 421724114}
+  rangeInteraction: 5
+  GUI: {fileID: 1243795813}
+  currentSmithingMode: 0
 --- !u!1001 &752619227
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -70313,7 +70367,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   objonAnvil: {fileID: 0}
   emptyItem: {fileID: 11400000, guid: 5d292342d5eccec42b40c5a49660334a, type: 2}
-  workstation: {fileID: 733786878}
+  workstation: {fileID: 751058504}
+  anvilMgr: {fileID: 919132147773256651}
 --- !u!1001 &917868791
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -81067,8 +81122,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1206607619}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.000000081459866, y: -0.0033859115, z: 2.7581748e-10, w: 0.9999943}
-  m_LocalPosition: {x: 0, y: -0.165699, z: 0.092041016}
+  m_LocalRotation: {x: -0.09837918, y: -0.90104085, z: 0.25567997, w: -0.3362658}
+  m_LocalPosition: {x: -0.62841797, y: 0.3750229, z: -0.7167969}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -91014,7 +91069,7 @@ MonoBehaviour:
   bloomCharcoal2: {fileID: 2007802693}
   bloomCharcoal3: {fileID: 23810451}
   heatLight: {fileID: 2093443641}
-  workstationScript: {fileID: 733786878}
+  workstationScript: {fileID: 751058504}
   recipeManager: {fileID: 439208263}
   itemDatabase: {fileID: 439208265}
   teir: 1
@@ -135216,10 +135271,7 @@ Transform:
   m_Children:
   - {fileID: 1772461059}
   - {fileID: 543450651948089849}
-  - {fileID: 543450652684242840}
-  - {fileID: 1340343459}
-  - {fileID: 543450651759929715}
-  - {fileID: 1078749631}
+  - {fileID: 751058503}
   m_Father: {fileID: 866032741}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1992672665
@@ -136846,12 +136898,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Priority:
-    Enabled: 0
-    m_Value: 0
+    Enabled: 1
+    m_Value: 10
   OutputChannel: 1
   StandbyUpdate: 2
-  m_StreamingVersion: 20170927
-  m_LegacyPriority: 10
+  m_StreamingVersion: 20241001
+  m_LegacyPriority: 0
   m_LookAt: {fileID: 0}
   m_Follow: {fileID: 0}
   m_Lens:
@@ -141804,7 +141856,7 @@ Transform:
   m_GameObject: {fileID: 919132147773256649}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.83, y: 0.13, z: 2.01}
+  m_LocalPosition: {x: 0.82995605, y: 0.12999725, z: 2.0100098}
   m_LocalScale: {x: 3, y: 2.5, z: 2.5}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -141815,7 +141867,7 @@ Transform:
   - {fileID: 6318055380485267622}
   - {fileID: 6914093669673124587}
   - {fileID: 277035022}
-  m_Father: {fileID: 1992619772}
+  m_Father: {fileID: 751058503}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!4 &543450651828387202
 Transform:
@@ -142150,7 +142202,7 @@ Transform:
   - {fileID: 2146127816}
   - {fileID: 1151388029294739136}
   - {fileID: 543450652012962862}
-  m_Father: {fileID: 1992619772}
+  m_Father: {fileID: 751058503}
   m_LocalEulerAnglesHint: {x: 0, y: 161.472, z: 0}
 --- !u!4 &543450652735798577
 Transform:
@@ -142781,14 +142833,66 @@ GameObject:
   - component: {fileID: 543450651759929715}
   - component: {fileID: 733786876}
   - component: {fileID: 733786877}
-  - component: {fileID: 733786878}
-  m_Layer: 0
+  - component: {fileID: 919132147773256650}
+  - component: {fileID: 919132147773256651}
+  m_Layer: 13
   m_Name: Anvil
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 2147483647
   m_IsActive: 1
+--- !u!114 &919132147773256650
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 919132147773256649}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e38dfdf92c51ff42b4199812cdaac17, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AnvilCrafting
+  AnvilPos: {fileID: 914790398}
+  Force: {fileID: 1730020182}
+  anvilMgr: {fileID: 919132147773256651}
+  recipeManager: {fileID: 439208263}
+  itemDatabase: {fileID: 439208265}
+--- !u!114 &919132147773256651
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 919132147773256649}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 308bf09e3a51d734f9556d31dcafa102, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AnvilManager
+  ChangeSide: {fileID: 1277271811}
+  ChangeAxisB: {fileID: 930725037}
+  ResetButton: {fileID: 855319256}
+  EditModeSwitch: {fileID: 1810217019}
+  MovePivotPoint: {fileID: 1486681136}
+  ExitEditMode: {fileID: 613582613}
+  hammerOBJ: {fileID: 786354280}
+  hammerSwingPoint: {fileID: 341245839}
+  hammerFlatRotationValue: {x: 20, y: -90, z: 30}
+  hammerPeenRotationValue: {x: 0, y: 90, z: -30}
+  minClickWaitTime: 0.2
+  rangeInteraction: 4
+  itemMask:
+    serializedVersion: 2
+    m_Bits: 512
+  AnvilEditModeText: {fileID: 210291159}
+  WS: {fileID: 751058504}
+  EditCameraController: {fileID: 1648126016}
+  crafter: {fileID: 919132147773256650}
+  anvilPlace: {fileID: 914790401}
+  mainCam: {fileID: 1206607624}
+  GUI: {fileID: 1243795813}
 --- !u!1 &919132147839608632
 GameObject:
   m_ObjectHideFlags: 0
@@ -143166,7 +143270,7 @@ MonoBehaviour:
   currentItem: {fileID: 0}
   EmptyItem: {fileID: 11400000, guid: 5d292342d5eccec42b40c5a49660334a, type: 2}
   CharItem: {fileID: 11400000, guid: 42cc8f0da6da43243a423e04356e50ea, type: 2}
-  workstationScript: {fileID: 733786878}
+  workstationScript: {fileID: 751058504}
   recipeManager: {fileID: 439208263}
   itemDatabase: {fileID: 439208265}
 --- !u!65 &919132148961809700
@@ -155810,3 +155914,4 @@ SceneRoots:
   - {fileID: 65090510}
   - {fileID: 75884768}
   - {fileID: 439208264}
+  - {fileID: 421724115}

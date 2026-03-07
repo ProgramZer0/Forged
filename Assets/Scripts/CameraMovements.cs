@@ -166,6 +166,8 @@ public class CameraMovements : MonoBehaviour
 
     private void HandleInteraction(RaycastHit hit)
     {
+        promptText.text = "";
+
         if (hit.collider.gameObject.TryGetComponent(out WheelButton wheel))
         {
             if (!wheelButtonPressed)

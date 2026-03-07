@@ -1,5 +1,11 @@
 using UnityEngine;
-
+public enum AnvilMode
+{
+    view,
+    Flat,
+    Peen,
+    None
+}
 public class SmithingCameraController : MonoBehaviour
 {
     [Header("References")]

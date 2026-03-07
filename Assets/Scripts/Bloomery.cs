@@ -58,7 +58,7 @@ public class Bloomery : MonoBehaviour
     private float bloomTimer = 0f;
     private float charocalTimer = 0f;
     private float timePerCharcoal = 0;
-    private float maxRatio = 0;
+    private float maxRatio = 0f;
 
     void Start()
     {

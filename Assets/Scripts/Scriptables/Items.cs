@@ -3,7 +3,7 @@ using UnityEngine;
 
 //Item Type determines:
 /*  If an item gets destroyed or not and at what temp
- *  it also determines if it can be consumed, put into hand, also some other scripts 
+ *  it also determines if it can be consumed, put into hand, and how it changes models and to what
  *  
  */
 public enum Itemtype

@@ -7,13 +7,14 @@ public class AnvilPlaces : MonoBehaviour
     public GameObject objonAnvil = null;
     public Items emptyItem;
     [SerializeField] private WorkstationScript workstation;
+    [SerializeField] private AnvilManager anvilMgr;
     private void OnTriggerEnter(Collider colid)
     {
         try
         {
             workstation.setItemOnAnvil(colid.gameObject.GetComponent<Item>().item);
             objonAnvil = colid.gameObject;
-            workstation.setObjOnAnvil(objonAnvil);
+            anvilMgr.SetRotator(objonAnvil);
         }
         catch { 
         
@@ -22,7 +23,20 @@ public class AnvilPlaces : MonoBehaviour
     private void OnTriggerExit(Collider colid)
     {
         objonAnvil = null;
-        workstation.setObjOnAnvil(objonAnvil);
+        anvilMgr.SetRotator(objonAnvil);
         workstation.setItemOnAnvil(emptyItem);
+    }
+
+
+    public void ReTriggerCol()
+    {
+        StartCoroutine(ResetCollider());
+    }
+    IEnumerator ResetCollider()
+    {
+        Collider col = GetComponent<Collider>();
+        col.enabled = false;
+        yield return null;
+        col.enabled = true;
     }
 }

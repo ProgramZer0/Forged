@@ -12,7 +12,8 @@ public enum PhaseType
     Mixing, //9
     Exhausting, //10
     Moisturizing, //11
-    SunExhaust //12
+    SunExhaust, //12
+    FirePit
 }
 
 [System.Serializable]
@@ -38,7 +39,8 @@ public class Recipe
      *  mixing (1-99), //mixing id that defines what needs to be mixed 
      *  exahusting (1-10 for heat lvl),
      *  moisterizing (time in seconds),
-     *  Sun_exhaust (time in seconds)
+     *  Sun_exhaust (time in seconds),
+     *  Firepit (time in seconds)
 
     Heating, //1
     Condensing, //2
@@ -52,6 +54,7 @@ public class Recipe
     Exhausting, //10
     Moisturizing, //11
     SunExhaust //12
+    FirePit // 13
 
 
     bloom to metal

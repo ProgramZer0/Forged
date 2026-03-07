@@ -5,21 +5,6 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 
-public enum AnvilMode
-{
-    view,
-    Flat,
-    Peen,
-    None
-}
-
-public enum AnvilHitType
-{
-    WarpInward,
-    Indent,
-    Main,
-    Edge
-}
 public enum SmithingMode
 {
     Normal,
@@ -32,37 +17,26 @@ public class WorkstationScript : MonoBehaviour
     [SerializeField] private GameObject mainVCam;
     [SerializeField] private GameObject anvilVCam;
     [SerializeField] private GameObject SmeltVCam;
-
     [SerializeField] private Camera mainCam;
+    [SerializeField] private LayerMask itemAndAnvilMask;
 
     [SerializeField] private Button SmeltB;
     [SerializeField] private Button AnvilB;
     [SerializeField] private Button EditB;
-
-    [SerializeField] private Button ChangeSide;
-    [SerializeField] private Button ChangeAxisB;
-    [SerializeField] private Button ResetButton;
-    [SerializeField] private Button EditModeSwitch;
-    [SerializeField] private Button MovePivotPoint;
-    [SerializeField] private Button ExitEditMode;
-    [SerializeField] private Slider Force;
-
     [SerializeField] private Button TongButton;
 
     [SerializeField] private Items Emtpy;
+    [SerializeField] private float minClickWaitTime = 0.2f;
 
     [SerializeField] private GameObject WorkstationUI;
     [SerializeField] private GameObject WorkstationButtons;
+    [SerializeField] private GameObject AnvilPos;
 
     [SerializeField] private GameObject AnvilUI;
     [SerializeField] private GameObject AnvilEditUI;
     [SerializeField] private GameObject SmeltUI;
 
-    [SerializeField] private TextMeshProUGUI AnvilEditModeText;
-
     [SerializeField] private GameObject displayObj;
-
-    [SerializeField] private GameObject AnvilPos;
 
     [SerializeField] private GameObject Hammer;
     [SerializeField] private GameObject Tongs;
@@ -71,48 +45,24 @@ public class WorkstationScript : MonoBehaviour
     [SerializeField] private Controls playerController;
     [SerializeField] private Smeltery smelteryScript;
     [SerializeField] private AnvilPlaces anvilPlace;
-
-    [SerializeField] private LayerMask itemMask;
-
-    [SerializeField] private GameObject hammerOBJ;
-    [SerializeField] private GameObject hammerSwingPoint;
-
-    [SerializeField] private Gui GUI;
-    [SerializeField] private SmithingCameraController EditCameraController;
-    [SerializeField] private CraftingRecipeManager recipeManager;
-    [SerializeField] private ItemDatabase itemDatabase;
-
-    [SerializeField] private Vector3 hammerFlatRotationValue;
-    [SerializeField] private Vector3 hammerPeenRotationValue;
-    [SerializeField] private float minClickWaitTime = 0.05f;
+    [SerializeField] private AnvilManager anvilManger;
+    [SerializeField] private AnvilCrafting anvilCrafter;
+    [SerializeField] private GameObject itemDefaultParents;
     [SerializeField] private float rangeInteraction = 6f;
 
+    [SerializeField] private Gui GUI;
+    //[SerializeField] private SmithingCameraController EditCameraController;
+
     public SmithingMode currentSmithingMode;
-    public AnvilMode currentAnvilMode;
-    private Vector3 lastMousePos;
-    private bool isDragging = false;
     private TextMesh display;
-    
-    private float hitForce = 0.03f;
-    private float hitSurface = 0.2f;
-    private bool inStation = false;
-    //private bool hammerActive = false;
-    //private bool tongsActive = false;
-    private bool shiftPressed = false;
     private bool LMBPressed = false;
+    private bool usingTongs = false;
+    private bool inStation = false;
     private bool isClicking = false;
-    private bool isMoving = false;
     private Items itemOnAnvil;
     private Items itemOnTongs;
-    private GameObject objOnAnvil;
     private GameObject objOnTongs;
-    private Vector3 dragOffset;
-    private Plane dragPlane;
-    private Vector3 currentRotateAxis = Vector3.up; // current axis for RotateSide
-    private Vector3[] localAxes = new Vector3[3];
-    private int currentAxisIndex = 0;
-    private Mesh workingMesh;
-    private float originalHeight;
+
 
     void Start()
     {
@@ -122,50 +72,37 @@ public class WorkstationScript : MonoBehaviour
         anvilVCam.SetActive(false);
         SmeltVCam.SetActive(false);
         WorkstationUI.SetActive(false);
-        currentAnvilMode = AnvilMode.None;
         SmeltB.onClick.AddListener(ShowSmeltery);
         AnvilB.onClick.AddListener(ShowMain);
         EditB.onClick.AddListener(ShowAnvilEdit);
-        ChangeSide.onClick.AddListener(RotateSide);
-        ChangeAxisB.onClick.AddListener(ChangeAxis);
-        ResetButton.onClick.AddListener(ResetObj);
-        EditModeSwitch.onClick.AddListener(SwitchEditMode);
-        MovePivotPoint.onClick.AddListener(SetMovingBool);
-        ExitEditMode.onClick.AddListener(ShowMain);
+
         TongButton.onClick.AddListener(UsingTongs);
 
-        InitializeAxes();
         display = displayObj.GetComponentInChildren<TextMesh>();
+        currentSmithingMode = SmithingMode.Normal;
+        anvilCrafter.ChangeSmithingMode(currentSmithingMode);
     }
 
     void Update()
     {
-        if(currentAnvilMode == AnvilMode.None)
-        {
-            AnvilEditModeText.text = "";
-        }
-        else
-        {
-            AnvilEditModeText.text = currentAnvilMode.ToString();
-        }
-
         if (Input.GetKeyDown(KeyCode.Mouse0))
             LMBPressed = true;
         if (Input.GetKeyUp(KeyCode.Mouse0))
         {
             LMBPressed = false;
-            isDragging = false;   
         }
 
-        if (Input.GetKeyDown(KeyCode.LeftShift))
-            shiftPressed = true;
-        if (Input.GetKeyUp(KeyCode.LeftShift))
-            shiftPressed = false;
+        if (LMBPressed)
+        {
+            if(!isClicking)
+                if (usingTongs)
+                    UseTongs();
+        }
 
-        if (Vector3.Distance(gameObject.transform.position, playerController.GetPlayerPos()) < rangeInteraction)
+        if (Vector3.Distance(AnvilPos.transform.position, playerController.GetPlayerPos()) < rangeInteraction)
         {
             RaycastHit hit;
-            if (Physics.Raycast(gameObject.transform.position, (playerController.GetPlayerPos() - transform.position), out hit, rangeInteraction))
+            if (Physics.Raycast(AnvilPos.transform.position, (playerController.GetPlayerPos() - AnvilPos.transform.position), out hit, rangeInteraction))
             {
                 //Debug.Log("hit " + hit.collider.gameObject.name);
                 if (hit.collider.tag == "Player")
@@ -197,141 +134,31 @@ public class WorkstationScript : MonoBehaviour
         if (inStation)
         {
             display.text = "";
-        }
-
-        if (LMBPressed)
-        {
-            if (!isClicking)
-                HandleClicking();
-        }
-
-        if (currentAnvilMode == AnvilMode.view)
-        {
-            //SetGravity(false);
-            ShowHand();
-        }
-        else if (currentAnvilMode == AnvilMode.Flat)
-        {
-            //SetGravity(true);
-            ShowFlat();
-        }
-        else if (currentAnvilMode == AnvilMode.Peen)
-        {
-            //SetGravity(true);
-            ShowPeen();
-        }
+        }        
     }
-
-    private void SetMovingBool()
+    private void UseTongs()
     {
-        isMoving = true;
-    }
 
-    public void SetGravity(bool value)
-    {
-        if (objOnAnvil == null) return;
-
-        objOnAnvil.GetComponent<Rigidbody>().useGravity = value;
-    }
-
-    private void MovePivot()
-    {
-        Camera cam = mainCam.GetComponent<Camera>();
-        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-
-        if (Physics.Raycast(ray, out RaycastHit hit, rangeInteraction))
+        Ray ray = mainCam.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
+        RaycastHit hit;
+        if (Physics.Raycast(ray, out hit, rangeInteraction, itemAndAnvilMask))
         {
-            EditCameraController.SetPivot(hit.point);
-        }
-    }
-    private void ShowHand()
-    {
-        hammerOBJ.SetActive(false);
-        if (GUI.currentState != CursorState.handCursor)
-            GUI.SetHandCursor(Input.mousePosition);
-    }
-    private void ShowFlat()
-    {
-        hammerOBJ.SetActive(true);
-        if (GUI.currentState != CursorState.blankCursor)
-            GUI.SetBankCursor(Input.mousePosition);
-
-        Camera cam = mainCam.GetComponent<Camera>();
-        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-
-        if (Physics.Raycast(ray, out RaycastHit hit, rangeInteraction))
-        {
-            // Hover slightly off surface
-            Vector3 targetPos = hit.point + hit.normal * 0.05f;
-
-            hammerOBJ.transform.position = Vector3.Lerp(
-                hammerOBJ.transform.position,
-                targetPos,
-                Time.deltaTime * 15f
-            );
-
-            // Rotate hammer to strike INTO the surface
-            Vector3 forwardOnSurface = Vector3.ProjectOnPlane(mainCam.transform.forward, hit.normal);
-
-            if (forwardOnSurface.sqrMagnitude < 0.001f)
+            var item = anvilCrafter.GetItemFromHit(hit);
+            if(item != null)
             {
-                forwardOnSurface = Vector3.Cross(hit.normal, mainCam.transform.right);
+                itemOnAnvil = item.item;
+                if (itemOnAnvil.type != Itemtype.Chunk || itemOnAnvil.type != Itemtype.Dust)
+                    PutItemOnTongs(hit);
             }
+            else
+                if(itemOnTongs != Emtpy)
+                    TakeItemOffTongs(hit);
 
-            Quaternion surfaceRot = Quaternion.LookRotation(-hit.normal, forwardOnSurface);
-
-            Quaternion baseOffset = Quaternion.Euler(hammerFlatRotationValue);
-
-            Quaternion finalRot = surfaceRot * baseOffset;
-
-            hammerOBJ.transform.rotation = Quaternion.Slerp(
-                hammerOBJ.transform.rotation,
-                finalRot,
-                Time.deltaTime * 15f
-            );
+            usingTongs = false;
         }
-    }
 
-    private void ShowPeen()
-    {
-        hammerOBJ.SetActive(true);
-        if (GUI.currentState != CursorState.blankCursor)
-            GUI.SetBankCursor(Input.mousePosition);
-
-        Camera cam = mainCam.GetComponent<Camera>();
-        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-
-        if (Physics.Raycast(ray, out RaycastHit hit, rangeInteraction))
-        {
-            Vector3 targetPos = hit.point + AnvilPos.transform.up * 0.05f;
-
-            hammerOBJ.transform.position = Vector3.Lerp(
-                hammerOBJ.transform.position,
-                targetPos,
-                Time.deltaTime * 15f
-            );
-
-            Vector3 normal = AnvilPos.transform.up;
-
-            Vector3 forwardOnSurface = Vector3.ProjectOnPlane(mainCam.transform.forward, normal);
-
-            if (forwardOnSurface.sqrMagnitude < 0.001f)
-            {
-                forwardOnSurface = Vector3.Cross(normal, mainCam.transform.right);
-            }
-
-            Quaternion surfaceRot = Quaternion.LookRotation(-normal, forwardOnSurface);
-
-            Quaternion baseOffset = Quaternion.Euler(hammerPeenRotationValue);
-
-            Quaternion finalRot = surfaceRot * baseOffset;
-
-            hammerOBJ.transform.rotation = Quaternion.Slerp(
-                hammerOBJ.transform.rotation,
-                finalRot,
-                Time.deltaTime * 15f
-            );
-        }
+        StartCoroutine(letGrab());
+        StartCoroutine(clickWait());
     }
 
     private IEnumerator clickWait()
@@ -340,614 +167,11 @@ public class WorkstationScript : MonoBehaviour
         yield return new WaitForSeconds(minClickWaitTime);
         isClicking = false;
     }
-
-    private void HandleClicking()
-    {
-        if(isMoving)
-        {
-            MovePivot();
-            isMoving = false;
-            return;
-        }
-
-        if (currentAnvilMode == AnvilMode.view)
-        {
-            if (GUI.currentState != CursorState.closedHandCursor)
-                GUI.SetClosedHCursor(Input.mousePosition);
-            HandlePointAndDrag();
-        }
-        else if (currentAnvilMode == AnvilMode.Flat)
-        {
-            StartCoroutine(clickWait());
-            if(HandleCrafting())
-                StartCoroutine(SwingHammerAnimation(true));
-            
-        }
-        else if (currentAnvilMode == AnvilMode.Peen)
-        {
-            StartCoroutine(clickWait());
-            if (HandleShapingEditor())
-                StartCoroutine(SwingHammerAnimation(false));
-        }
-    }
-
-    private IEnumerator SwingHammerAnimation(bool IsFlatSide)
-    {
-        // Record current rotation (hover rotation)
-        Quaternion startRot = hammerSwingPoint.transform.rotation;
-
-        // Determine swing rotation offset
-        Quaternion swingRot;
-        if (IsFlatSide)
-        {
-            // Slight rotation forward for flat strike
-            swingRot = startRot * Quaternion.Euler(0, 0f, -30f);
-        }
-        else
-        {
-            // Slight rotation downward/right for peen strike
-            swingRot = startRot * Quaternion.Euler(0, 0f, 30);
-        }
-
-        // Swing towards strike
-        float t = 0f;
-        float swingDuration = 0.1f; // seconds
-        while (t < 1f)
-        {
-            t += Time.deltaTime / swingDuration;
-            hammerSwingPoint.transform.rotation = Quaternion.Slerp(startRot, swingRot, t);
-            yield return null;
-        }
-
-        // Hold impact for a frame
-        yield return new WaitForSeconds(0.05f);
-
-        // Return to hover rotation (current ShowFlat/ShowPeen rotation)
-        t = 0f;
-
-        Quaternion endRot = hammerSwingPoint.transform.localRotation;
-        Quaternion targetRot = Quaternion.identity;
-
-        while (t < 1f)
-        {
-            t += Time.deltaTime / swingDuration;
-            hammerSwingPoint.transform.localRotation = Quaternion.Slerp(endRot, targetRot, t);
-            yield return null;
-        }
-
-        hammerSwingPoint.transform.localRotation = Quaternion.identity;
-    }
-
-    private bool HandleShapingEditor()
-    {
-       // if (objOnAnvil == null) return false;
-
-        Ray ray = mainCam.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-
-        if (Physics.Raycast(ray, out hit, rangeInteraction, itemMask))
-        {
-            if (hit.collider.gameObject == objOnAnvil)
-            {
-                Recipe shapingRecipe = recipeManager.FindRecipe(PhaseType.Shaping, itemOnAnvil.itemID);
-                if (shapingRecipe != null)
-                {
-                    float tempNeeded = shapingRecipe.requiredValue * 20;
-
-                    if (itemOnAnvil.heatTimer >= tempNeeded)
-                    {
-                        Vector3 direction = GetHitDirection(hit);
-                        AnvilHitType hitType = DetermineHitType(hit);
-                        EditMesh(direction, hit.point, Force.value * hitForce, hitType);
-                        return true;
-                    }
-                }
-            }
-        }
-        
-        return false;
-    }
-
-    private bool HandleShapingEditor(Recipe shapingRecipe, RaycastHit hit)
-    {
-        if (shapingRecipe != null)
-        {
-            float tempNeeded = shapingRecipe.requiredValue * 20;
-
-            if (itemOnAnvil.heatTimer >= tempNeeded)
-            {
-                Vector3 direction = GetHitDirection(hit);
-                AnvilHitType hitType = DetermineHitType(hit);
-                EditMesh(direction, hit.point, Force.value * hitForce, hitType);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private bool TryToGrabItem(RaycastHit hit)
-    {
-        //Debug.Log("trying to get item");
-        Item item = GetComponent<Item>();
-        if(item != null)
-        {
-            Debug.Log("found item on main");
-            itemOnAnvil = item.item;
-            objOnAnvil = hit.collider.gameObject;
-            return true;
-        }
-        else
-        {
-            Debug.Log(hit.transform.parent);
-
-            item = hit.transform.parent.GetComponent<Item>();
-            if (item != null)
-            {
-                Debug.Log("found item on parent");
-                itemOnAnvil = item.item;
-                objOnAnvil = hit.transform.parent.gameObject;
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private bool HandleCrafting()
-    {
-        //if (objOnAnvil == null) return false;
-
-        Ray ray = mainCam.GetComponent<Camera>().ScreenPointToRay(Input.mousePosition);
-        RaycastHit hit;
-
-        if (Physics.Raycast(ray, out hit, rangeInteraction, itemMask))
-        {
-            Debug.Log("hit item " + hit.collider.gameObject.name);
-            Debug.Log("obj is the obj on anvil:  " + hit.collider.gameObject.name);
-            
-            if(itemOnAnvil == null || objOnAnvil == null || hit.collider.gameObject != objOnAnvil)
-            {
-                //Debug.Log("hit is: " + hit.transform.gameObject);
-                if (!TryToGrabItem(hit))
-                    return false;
-            }
-            Debug.Log("all valid entering crafting");
-
-            Recipe condensingRecipe = recipeManager.FindRecipe(PhaseType.Condensing, itemOnAnvil.itemID);
-            Recipe anvilRecipe = recipeManager.FindRecipe(PhaseType.AnvilHammering, itemOnAnvil.itemID);
-            Recipe shapingRecipe = recipeManager.FindRecipe(PhaseType.Shaping, itemOnAnvil.itemID);
-
-
-
-            if (anvilRecipe != null)
-            {
-                Debug.Log("anvil recipe exsist ID: Input Item: " + anvilRecipe.inputItemIDs[0] +
-                    ", requiredValue: " + anvilRecipe.requiredValue + ", output Item: " + anvilRecipe.outputItemID);
-
-                Items newItem = itemDatabase.GetItemByID(anvilRecipe.outputItemID);
-                Debug.Log("Item: " + newItem.name);
-
-                if (newItem != null)
-                {
-                    ModelChange(newItem, objOnAnvil, hit);
-
-                    itemOnAnvil = newItem;
-                }
-            }
-            else if (shapingRecipe != null)
-            {
-                Debug.Log("shaping recipe exsist ID:" + anvilRecipe.recipeID);
-
-                return HandleShapingEditor(shapingRecipe, hit);
-            }
-            else
-            {
-                //needs heat 
-                if (itemOnAnvil.heatTimer >= 0)
-                {
-                    if (condensingRecipe != null)
-                    {
-                        Debug.Log("condencing recipe exsist ID:" + anvilRecipe.recipeID);
-
-                        Recipe heatingRecipe = recipeManager.FindRecipe(PhaseType.Heating, itemOnAnvil.itemID);
-                        if (heatingRecipe != null)
-                        {
-                            float tempNeeded = heatingRecipe.requiredValue * 20;
-
-                            if (itemOnAnvil.heatTimer >= tempNeeded)
-                            {
-                                CondenseItem(hit, condensingRecipe);
-                                return true;
-                            }
-                            // not high enough heat
-                        }
-                        // if nothing else is found 
-                    }
-                }
-                //no heat at all
-            }
-        }
-        return false;
-    }
-
-    private void CondenseItem(RaycastHit hit, Recipe condensingRecipe)
-    {
-        float targetPercent = condensingRecipe.requiredValue;
-
-        if (itemOnAnvil.condensed >= targetPercent)
-            return;
-
-        float baseStep = Force.value * 0.01f;
-
-        // Optional: diminishing returns
-        float efficiency = Mathf.Lerp(1f, 0.2f, itemOnAnvil.condensed);
-        float step = baseStep * efficiency;
-
-        float remaining = targetPercent - itemOnAnvil.condensed;
-        float appliedStep = Mathf.Min(step, remaining);
-
-        itemOnAnvil.condensed += appliedStep;
-
-        // Calculate scale from progress instead of multiplying
-        Vector3 scale;
-
-        if (currentSmithingMode == SmithingMode.Normal)
-        {
-            scale = GetNormalModeScaleFromProgress(itemOnAnvil.condensed);
-            hit.collider.gameObject.transform.localScale = scale;
-
-            if (itemOnAnvil.condensed >= targetPercent)
-            {
-                //completed
-            }
-        }
-        else
-            GetExpertModeScaleFromProgress(hit, condensingRecipe);
-
-        
-    }
-
-    private void GetExpertModeScaleFromProgress(RaycastHit hit, Recipe condensingRecipe)
-    {
-        float force = Force.value;
-        float radius = 0.5f;
-
-        if (itemOnAnvil.condensed >= condensingRecipe.requiredValue)
-            return;
-
-        // ----- Progress Gain -----
-        float baseGain = force * 0.02f;
-
-        float efficiency = Mathf.Lerp(1f, 0.2f, itemOnAnvil.condensed);
-        float appliedGain = baseGain * efficiency;
-
-        float remaining = condensingRecipe.requiredValue - itemOnAnvil.condensed;
-        appliedGain = Mathf.Min(appliedGain, remaining);
-
-        itemOnAnvil.condensed += appliedGain;
-
-        // ----- Mesh Deformation -----
-        Vector3[] vertices = workingMesh.vertices;
-
-        Vector3 localHit = hit.collider.gameObject.transform.InverseTransformPoint(hit.point);
-        Vector3 localDirection = hit.collider.gameObject.transform.InverseTransformDirection(Vector3.down);
-
-        float maxHeight = Mathf.Lerp(
-            originalHeight,
-            originalHeight * 0.5f,
-            itemOnAnvil.condensed
-        );
-
-        float currentHeight = workingMesh.bounds.size.y;
-        float allowedCompression = currentHeight - maxHeight;
-
-        for (int i = 0; i < vertices.Length; i++)
-        {
-            float distance = Vector3.Distance(vertices[i], localHit);
-
-            if (distance < radius)
-            {
-                float falloff = 1f - (distance / radius);
-
-                Vector3 move = localDirection * force * 0.01f * falloff;
-
-                // Clamp vertical compression
-                if (allowedCompression > 0)
-                    vertices[i] += move;
-            }
-        }
-
-        workingMesh.vertices = vertices;
-        workingMesh.RecalculateNormals();
-        workingMesh.RecalculateBounds();
-
-        if (itemOnAnvil.condensed >= condensingRecipe.requiredValue)
-        {
-            //
-        }
-    }
-
-    private Vector3 GetNormalModeScaleFromProgress(float progress)
-    {
-        float height = Mathf.Lerp(1f, 0.5f, progress);
-        float length = Mathf.Lerp(1f, 1.8f, progress);
-        float width = Mathf.Lerp(1f, 0.8f, progress);
-
-        return new Vector3(width, height, length);
-    }
-
-    private void ModelChange(Items changeTo, GameObject obj, RaycastHit hit)
-    {
-        if(obj == null)
-        {
-            var item = GetComponent<Item>().item;
-            if (item != null)
-            {
-                obj = hit.collider.gameObject;
-            }
-            else
-            {
-                item = GetComponentInParent<Item>().item;
-                if (item != null)
-                {
-                    obj = hit.transform.GetComponentInParent<GameObject>();
-                }
-            }
-        }
-        
-        if(obj != null)
-        {
-            Debug.Log("Changing Models: change to " + changeTo.name + ", from " + obj.GetComponent<Item>().item.name);
-            switch (changeTo.type)
-            {
-                case Itemtype.Ore:
-                    //this should never happen
-                    break;
-                case Itemtype.Chunk:
-                    if (obj.GetComponent<Item>().item.type == Itemtype.Ore)
-                        obj.GetComponent<OreSplitter>().SplitOre();
-                    break;
-                case Itemtype.Dust:
-
-                    Destroy(obj);
-                    Vector3 spawnPos = hit.transform.position;
-                    GameObject o = UnityEngine.Object.Instantiate(changeTo.model, spawnPos, Quaternion.Euler(0, 0, 0));
-
-                    objOnAnvil = o;
-                    obj = o;
-                    break;
-                case Itemtype.Metal:
-                    if (obj.GetComponent<Item>().item.type == Itemtype.Dust)
-                    {
-                        //compress dust to metal
-                    }
-                    if (obj.GetComponent<Item>().item.type == Itemtype.Bloom)
-                    {
-                        //making bloom texture change to metal texture
-                    }
-                    if (obj.GetComponent<Item>().item.type == Itemtype.Ore)
-                    {
-                        //shape for moab stuff
-                    }
-                    break;
-            }
-
-            obj.GetComponent<Item>().item = changeTo;
-        }
-    }
-
-    private Vector3 GetHitDirection(RaycastHit hit)
-    {
-        if (currentAnvilMode == AnvilMode.Flat)
-        {
-            return -hit.normal; // push inward
-        }
-        else if (currentAnvilMode == AnvilMode.Peen)
-        {
-            return -hit.normal * 1.5f; // sharper push
-        }
-
-        return Vector3.down;
-    }
-
-    private AnvilHitType DetermineHitType(RaycastHit hit)
-    {
-        Vector3 localPoint = AnvilPos.transform.InverseTransformPoint(hit.point);
-
-        if (localPoint.x > 0.4f)
-            return AnvilHitType.Edge;
-
-        if (localPoint.x < -0.4f)
-            return AnvilHitType.WarpInward;
-
-        return AnvilHitType.Main;
-    }
-
-    
-
-    private void EditMesh(Vector3 direction, Vector3 worldPoint, float force, AnvilHitType hitType)
-    {
-        MeshFilter mf = objOnAnvil.GetComponentInChildren<MeshFilter>();
-        Mesh mesh = mf.mesh;
-
-        Vector3[] vertices = mesh.vertices;
-
-        // Convert hit point to LOCAL SPACE
-
-        Vector3 localHitPoint = objOnAnvil.transform.InverseTransformPoint(worldPoint);
-
-        float radius = hitSurface;
-
-        for (int i = 0; i < vertices.Length; i++)
-        {
-            float distance = Vector3.Distance(vertices[i], localHitPoint);
-
-            if (distance < radius)
-            {
-                float falloff = 1f - (distance / radius);
-
-                Vector3 localDirection = objOnAnvil.transform.InverseTransformDirection(direction);
-
-                vertices[i] += localDirection * force * falloff;
-
-                // Optional behavior per hit type
-                if (hitType == AnvilHitType.Edge)
-                    vertices[i] += Vector3.right * force * 0.2f * falloff;
-
-                if (hitType == AnvilHitType.WarpInward)
-                    vertices[i] += Vector3.forward * force * 0.3f * falloff;
-            }
-        }
-
-        mesh.vertices = vertices;
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-    }
-    private void HandlePointAndDrag()
-    {
-        if (objOnAnvil == null) return;
-
-
-        // Start drag
-        if (!isDragging)
-        {
-            isDragging = true;
-            lastMousePos = Input.mousePosition;
-
-            // Plane aligned with Anvil's up
-            dragPlane = new Plane(
-                AnvilPos.transform.up,
-                objOnAnvil.transform.position + AnvilPos.transform.up * 0.01f
-            );
-
-            // Compute initial offset
-            Ray ray = mainCam.ScreenPointToRay(Input.mousePosition);
-            if (dragPlane.Raycast(ray, out float enter))
-            {
-                Vector3 hitPoint = ray.GetPoint(enter);
-                dragOffset = objOnAnvil.transform.position - hitPoint;
-            }
-
-        }
-
-        if (shiftPressed)
-        {
-            // MOVE mode: smooth position update
-            Ray ray = mainCam.ScreenPointToRay(Input.mousePosition);
-            if (dragPlane.Raycast(ray, out float enter))
-            {
-                Vector3 hitPoint = ray.GetPoint(enter);
-                Vector3 targetPos = hitPoint + dragOffset;
-
-                // Smoothly move toward target
-                float moveSpeed = 20f; // tweak for responsiveness
-                objOnAnvil.transform.position = Vector3.Lerp(
-                    objOnAnvil.transform.position,
-                    targetPos,
-                    moveSpeed * Time.deltaTime
-                );
-            }
-        }
-        else
-        {
-
-            // Determine the current top face axis
-            Vector3 topAxis = GetCurrentTopAxis(); // returns Vector3.up, Vector3.right, etc. depending on side
-
-            Vector3 mouseDelta = Input.mousePosition - lastMousePos;
-            float rotateSpeed = 0.3f;
-
-            // Rotate around the top face normal (locked axis)
-            objOnAnvil.transform.Rotate(topAxis, mouseDelta.x * rotateSpeed, Space.World);
-
-            lastMousePos = Input.mousePosition;
-
-
-            /*
-            Vector3 mouseDelta = Input.mousePosition - lastMousePos;
-            float rotateSpeed = 0.2f;
-
-            // Always use camera axes
-            Vector3 camRight = mainCam.transform.right;
-            Vector3 camUp = mainCam.transform.up;
-
-            // Build rotations
-            Quaternion rotX = Quaternion.AngleAxis(-mouseDelta.x * rotateSpeed, camUp);
-            Quaternion rotY = Quaternion.AngleAxis(mouseDelta.y * rotateSpeed, camRight);
-
-            // Apply
-            objOnAnvil.transform.rotation = rotX * rotY * objOnAnvil.transform.rotation;*/
-        }
-
-        lastMousePos = Input.mousePosition;
-    }
-
-    private Vector3 GetCurrentTopAxis()
-    {
-        if (objOnAnvil == null)
-            return Vector3.up;
-
-        // Optional: snap to nearest world axis for stability
-        Vector3 up = objOnAnvil.transform.up;
-        Vector3 right = objOnAnvil.transform.right;
-        Vector3 forward = objOnAnvil.transform.forward;
-
-        // Compare which axis is closest to world up
-        float upDot = Mathf.Abs(Vector3.Dot(up, Vector3.up));
-        float rightDot = Mathf.Abs(Vector3.Dot(right, Vector3.up));
-        float forwardDot = Mathf.Abs(Vector3.Dot(forward, Vector3.up));
-
-        if (upDot > rightDot && upDot > forwardDot)
-            return up;
-        else if (rightDot > forwardDot)
-            return right;
-        else
-            return forward;
-    }
-
-    private void InitializeAxes()
-    {
-        if (objOnAnvil == null) return;
-
-        localAxes[0] = objOnAnvil.transform.up;
-        localAxes[1] = objOnAnvil.transform.right;
-        localAxes[2] = objOnAnvil.transform.forward;
-
-        currentAxisIndex = 0;
-        currentRotateAxis = localAxes[currentAxisIndex];
-    }
-
-    // Call this on "Change Axis" button
-    public void ChangeAxis()
-    {
-        if (objOnAnvil == null) return;
-        currentAxisIndex = (currentAxisIndex + 1) % localAxes.Length;
-        currentRotateAxis = localAxes[currentAxisIndex];
-    }
-
-    // Call this on "Rotate Side" button
-    public void RotateSide()
-    {
-
-        if (objOnAnvil == null) return;
-
-        Quaternion rotation = Quaternion.AngleAxis(90f, currentRotateAxis);
-        objOnAnvil.transform.rotation = rotation * objOnAnvil.transform.rotation;
-    }
-
-    public void ResetObj()
-    {
-        if (objOnAnvil == null) return;
-
-        objOnAnvil.transform.rotation = Quaternion.identity;
-        currentRotateAxis = Vector3.up;
-    }
-
     private void ShowSmeltery()
     {
         Hammer.SetActive(false);
         Tongs.GetComponent<Animator>().SetBool("InSmeltery", true);
-        currentAnvilMode = AnvilMode.None;
+        anvilManger.SetAnvilViewType(AnvilMode.None);
 
         mainVCam.SetActive(false);
         SmeltVCam.SetActive(true);
@@ -958,12 +182,13 @@ public class WorkstationScript : MonoBehaviour
         SmeltUI.SetActive(true);
     }
 
-    private void ShowMain()
+    public void ShowMain()
     {
+        anvilManger.HideHammer();
         WorkstationButtons.SetActive(true);
         Hammer.SetActive(true);
         Tongs.SetActive(true);
-        currentAnvilMode = AnvilMode.None;
+        anvilManger.SetAnvilViewType(AnvilMode.None);
 
         Tongs.GetComponent<Animator>().SetBool("InSmeltery", false);
         Tongs.GetComponent<Animator>().SetBool("FireTongs", false);
@@ -977,26 +202,12 @@ public class WorkstationScript : MonoBehaviour
         SmeltUI.SetActive(false);
     }
 
-    private void SwitchEditMode()
-    {
-        switch (currentAnvilMode)
-        {
-            case AnvilMode.view:
-                currentAnvilMode = AnvilMode.Flat;
-                break;
-            case AnvilMode.Flat:
-                currentAnvilMode = AnvilMode.Peen;
-                break;
-            case AnvilMode.Peen:
-                currentAnvilMode = AnvilMode.view;
-                break;
-        }
-    }
+   
 
     private void ShowAnvilEdit()
     {
         WorkstationButtons.SetActive(false);
-        currentAnvilMode = AnvilMode.view;
+        anvilManger.SetAnvilViewType(AnvilMode.view);
 
         Hammer.SetActive(false);
         Tongs.SetActive(false);
@@ -1018,7 +229,7 @@ public class WorkstationScript : MonoBehaviour
     public void DisableUI()
     {
         Cursor.lockState = CursorLockMode.Locked;
-        currentAnvilMode = AnvilMode.None;
+        anvilManger.SetAnvilViewType(AnvilMode.None);
         WorkstationUI.SetActive(false);
 
         Hammer.SetActive(false);
@@ -1034,34 +245,29 @@ public class WorkstationScript : MonoBehaviour
     }
     private void UsingTongs()
     {
-        putItemOnAndOffTongs();
-        StartCoroutine(letGrab());
+        usingTongs = !usingTongs;
     }
 
-    private void putItemOnAndOffTongs()
+    private void TakeItemOffTongs(RaycastHit hit)
     {
+
+        Tongs.GetComponent<Animator>().SetBool("TongGrab", true);
+        objOnTongs.GetComponent<Rigidbody>().useGravity = true;
+        objOnTongs.GetComponent<Collider>().enabled = true;
+        objOnTongs.transform.position = hit.point + new Vector3(0, 0, 0.1f);
+        objOnTongs.transform.SetParent(itemDefaultParents.transform);
+        objOnTongs = null;
+        itemOnTongs = Emtpy;
+        smelteryScript.HandleItemOnTongs();
+    }
+    private void PutItemOnTongs(RaycastHit hit)
+    {
+        GameObject obj = hit.transform.gameObject;
         if (itemOnTongs == Emtpy)
         {
             Tongs.GetComponent<Animator>().SetBool("TongGrab", true);
-            StartCoroutine(TongPlaceDelay());
+            StartCoroutine(TongPlaceDelay(obj));
         }
-        else
-        {
-            Tongs.GetComponent<Animator>().SetBool("TongGrab", true);
-            Destroy(objOnTongs);
-            objOnTongs = null;
-
-            smelteryScript.HandleItemOnTongs();
-            GameObject o = UnityEngine.Object.Instantiate(itemOnTongs.model, AnvilPos.transform.position, Quaternion.Euler(0, 0, 0));
-            itemOnAnvil = itemOnTongs;
-            itemOnTongs = Emtpy;
-        }
-    }
-
-    private void changeItem(Items nextItem)
-    {
-        Destroy(anvilPlace.objonAnvil);
-        GameObject o = UnityEngine.Object.Instantiate(nextItem.model, AnvilPos.transform.position, Quaternion.Euler(0, 0, 0));
     }
 
     public void setItemOnAnvil(Items item)
@@ -1087,23 +293,18 @@ public class WorkstationScript : MonoBehaviour
         Tongs.GetComponent<Animator>().SetBool("TongGrab", false);
         Hammer.GetComponent<Animator>().SetBool("HammerHit", false);
     }
-    private IEnumerator TongPlaceDelay()
+    private IEnumerator TongPlaceDelay(GameObject obj)
     {
         yield return new WaitForSeconds(.5f);
-        GameObject objs = UnityEngine.Object.Instantiate(itemOnAnvil.model, TongPlacement.transform.position, Quaternion.Euler(0, 0, 0));
-        objs.GetComponent<Rigidbody>().useGravity = false;
-        objs.GetComponent<Collider>().enabled = false;
-        objs.transform.SetParent(TongPlacement.transform);
-        objOnTongs = objs;
+        obj.GetComponent<Rigidbody>().useGravity = false;
+        obj.GetComponent<Collider>().enabled = false;
+        obj.transform.SetParent(TongPlacement.transform);
+        obj.transform.position = TongPlacement.transform.position;
+        objOnTongs = obj;
 
-        smelteryScript.HandleItemOnTongs();
-        Destroy(anvilPlace.objonAnvil);
         itemOnTongs = itemOnAnvil;
         itemOnAnvil = Emtpy;
+        smelteryScript.HandleItemOnTongs();
     }
-    public void setObjOnAnvil(GameObject temp)
-    {
-        objOnAnvil = temp;
-        InitializeAxes();
-    }
+
 }
