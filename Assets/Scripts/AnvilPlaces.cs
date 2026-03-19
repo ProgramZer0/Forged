@@ -5,26 +5,32 @@ using UnityEngine;
 public class AnvilPlaces : MonoBehaviour
 {
     public GameObject objonAnvil = null;
-    public Items emptyItem;
     [SerializeField] private WorkstationScript workstation;
     [SerializeField] private AnvilManager anvilMgr;
     private void OnTriggerEnter(Collider colid)
     {
-        try
+
+        Items item = colid.gameObject.GetComponent<Items>();
+        if(item != null)
         {
-            workstation.setItemOnAnvil(colid.gameObject.GetComponent<Item>().item);
+            workstation.setItemOnAnvil(item);
             objonAnvil = colid.gameObject;
             anvilMgr.SetRotator(objonAnvil);
-        }
-        catch { 
-        
+
+            TempManager tm = colid.GetComponent<TempManager>();
+            if (tm != null)
+                tm.timerEnabled = false;
         }
     }
     private void OnTriggerExit(Collider colid)
     {
         objonAnvil = null;
         anvilMgr.SetRotator(objonAnvil);
-        workstation.setItemOnAnvil(emptyItem);
+        workstation.setItemOnAnvil(null);
+
+        TempManager tm = colid.GetComponent<TempManager>();
+        if (tm != null)
+            tm.timerEnabled = true;
     }
 
 

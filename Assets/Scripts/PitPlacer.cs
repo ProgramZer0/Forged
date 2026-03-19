@@ -6,7 +6,11 @@ public class PitPlacer : MonoBehaviour
 { 
     private void OnTriggerEnter(Collider collision)
     {
-        if (collision.transform.GetComponent<Item>().item.name.Contains("Wood"))
+        var itemScript = collision.transform.GetComponent<Items>();
+        if (!itemScript)
+            return;
+
+        if (itemScript.name.Contains("Wood"))
         {
             if (FindFirstObjectByType<FirePit>().CanAddCheck())
             {
@@ -19,17 +23,6 @@ public class PitPlacer : MonoBehaviour
                 {
                     collision.gameObject.GetComponent<Rigidbody>().AddForce(new Vector3(UnityEngine.Random.Range(0, 20), 20, UnityEngine.Random.Range(0, 20)) * 40);
                 }
-            }
-        }
-        else if (collision.GetComponent<Collider>().tag == "Player" | collision.GetComponent<Collider>().tag == "Terrain" | collision.transform.GetComponent<Item>().item.name.Contains("Charcoal"))
-        {
-            //nothing
-        }
-        else
-        {
-            if (collision.gameObject.GetComponent<Rigidbody>())
-            {
-                collision.gameObject.GetComponent<Rigidbody>().AddForce(new Vector3(UnityEngine.Random.Range(0, 20), 20, UnityEngine.Random.Range(0, 20)) * 40);
             }
         }
     }

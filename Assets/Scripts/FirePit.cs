@@ -13,12 +13,13 @@ public class FirePit : MonoBehaviour
     [SerializeField] private GameObject charWood3;
     [SerializeField] private GameObject WoodPlaced;
     [SerializeField] private GameObject WoodBurning;
-    [SerializeField] private Items charcoalItem;
+    [SerializeField] private int charcoalItemID = 101;
     [SerializeField] private GameObject fireReady;
     [SerializeField] private Light FireLight;
     [SerializeField] private TextMesh textTip;
     [SerializeField] private Color WoodColor;
     [SerializeField] private Color charWoodColor;
+    [SerializeField] private ItemDatabase ID;
 
     private bool fireLit;
     private bool canAdd;
@@ -203,7 +204,9 @@ public class FirePit : MonoBehaviour
                             break;
                     }
 
-                    GameObject o = UnityEngine.Object.Instantiate(charcoalItem.model, tempPos, tempRot);
+                    
+                    GameObject o = ID.SpawnItem(charcoalItemID, tempPos, tempRot);
+
                 }
                 fireReady.SetActive(false);
                 logsPlaced = 0;

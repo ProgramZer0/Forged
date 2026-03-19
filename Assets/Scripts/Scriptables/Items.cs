@@ -1,63 +1,51 @@
 using UnityEngine;
 
-
-//Item Type determines:
-/*  If an item gets destroyed or not and at what temp
- *  it also determines if it can be consumed, put into hand, and how it changes models and to what
- *  
- */
-public enum Itemtype
+public class Items : MonoBehaviour
 {
-    Dust,
-    Bloom,
-    Chunk,
-    Metal,
-    Potions,
-    Equipment,
-    Tools,
-    Default,
-    Ore
-}
-
-public enum MetalType
-{
-    Tin,
-    Copper,
-    Bronze,
-    Iron,
-    Steel,
-    Silver,
-    Nickel,
-    Titanium,
-    Oppa,
-    Nameless,
-    Moabilimite,
-    Santillum,
-    Gold,
-    Electrum,
-    Lithium,
-    Poillum,
-    NONE
-}
-
-[CreateAssetMenu(fileName = "New Item", menuName = "Assets/Item")]
-public class Items : ScriptableObject
-{
-    public Itemtype type;
     public int itemID;
     public string itemName;
-
-    [TextArea]
     public string itemDescription;
     public string cost;
-    public Sprite itemSprite;
-    public GameObject model;
 
-    [Header("Metal Settings")]
-    //public MetalType metalType = MetalType.NONE;
+    public Itemtype type;
+
+    [Header("Runtime Metal State")]
     public PhaseType currentPhase = PhaseType.NONE;
     public float heatTimer = 0f;
     public float condensed = 0f;
-    public Color baseColor; 
-    
+
+    public Color baseColor;
+
+    public ItemData itemData;
+
+    public void ApplyData(ItemData data)
+    {
+        itemData = data;
+        itemID = data.itemID;
+        itemName = data.itemName;
+        itemDescription = data.itemDescription;
+        cost = data.cost;
+
+        type = data.type;
+
+        // IMPORTANT: reset runtime values
+        currentPhase = PhaseType.NONE;
+        heatTimer = 0f;
+        condensed = 0f;
+        if (GetComponent<Renderer>())
+            baseColor = GetComponent<Renderer>().material.color;
+        else
+            baseColor = Color.white;
+    }
+    public void ApplyJustItemData(ItemData data)
+    {
+        itemData = data;
+        itemID = data.itemID;
+        itemName = data.itemName;
+        itemDescription = data.itemDescription;
+        cost = data.cost;
+
+        type = data.type;
+    }
+
 }

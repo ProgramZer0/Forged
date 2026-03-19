@@ -159,8 +159,8 @@ public class CameraMovements : MonoBehaviour
         if (heldObject != null) return;
 
         pickupPrompt.SetActive(true);
-        promptText.text = hit.transform.TryGetComponent(out Item item)
-            ? "Hold mouse 1 to pick up " + item.item.name
+        promptText.text = hit.transform.TryGetComponent(out Items item)
+            ? "Hold mouse 1 to pick up " + item.name
             : "Hold mouse 1 to pick up " + hit.collider.gameObject.name;
     }
 

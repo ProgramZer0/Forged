@@ -8,7 +8,7 @@ public class Enemable : ScriptableObject
     public string enemyId; //ID use for generating
     public string enemyName; //For ease of view
     public EnemyType enemyType;
-    public Items dropItem; //droping item
+    public ItemData dropItem; //droping item
     public int itemMaxAmount; //amount dropped
     public int ViewDistance = 15; //The player detection distance 
     public float Speed = 5; //Speed of the Enemy

@@ -25,8 +25,7 @@ using UnityEngine;
 public class Bloomery : MonoBehaviour
 {
     [Header("Items")]
-    [SerializeField] private Items EmptyItem;
-    [SerializeField] private Items charcoalItem;
+    [SerializeField] private int charcoalItemID = 101;
     [SerializeField] private float defaultTimePerCharcoal = 16f;
     [SerializeField] private float defaultMaxRatio = 0.25F;
 
@@ -48,7 +47,7 @@ public class Bloomery : MonoBehaviour
     [Header("Teir")]
     [SerializeField] private int teir = 1;
 
-    private Items currentItem = null;
+    private ItemData currentItem = null;
     private int currentItemCount = 0;
     private int currentCharcoal = 0;
     private float charcoalNeededPerItem = 1;
@@ -89,10 +88,10 @@ public class Bloomery : MonoBehaviour
         }
     }
     
-    public bool AddItem(Items item)
+    public bool AddItem(ItemData item)
     {
         Debug.Log("adding item: " + item.itemName + " to bloomery");
-        if (item == charcoalItem)
+        if (item.itemID == charcoalItemID)
         {
             currentCharcoal++;
             UpdateCharcoalVisuals();
@@ -171,10 +170,8 @@ public class Bloomery : MonoBehaviour
             {
                 currentItemCount--;
                 charcoalUsed = 0;
-                Items nextItem = itemDatabase.GetItemByID(currentRecipe.outputItemID);
 
-                // spawn the final item
-                Instantiate(nextItem.model, spawnPos.transform.position, Quaternion.Euler(90, 0, 0));
+                itemDatabase.SpawnItem(currentRecipe.outputItemID, spawnPos.transform.position, Quaternion.Euler(90, 0, 0));
 
                 //Not enough to continue
                 if (currentCharcoal < charcoalNeededPerItem || currentItemCount <= 0)
@@ -233,6 +230,4 @@ public class Bloomery : MonoBehaviour
         bloomCharcoal2.SetActive(currentCharcoal >= 6);
         bloomCharcoal3.SetActive(currentCharcoal >= 16);
     }
-
-    public Items ReturnEmpty() => EmptyItem;
 }

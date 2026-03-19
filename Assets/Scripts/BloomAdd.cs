@@ -7,22 +7,15 @@ public class BloomAdd : MonoBehaviour
     [SerializeField] private Bloomery bloomery;
     private void OnTriggerEnter(Collider collision)
     {
-        //Debug.Log(collision.transform.GetComponent<Item>().item.name);
-        try
+        var itemScript = collision.transform.GetComponent<Items>();
+        if (itemScript)
+            if (bloomery.AddItem(itemScript.itemData))
         {
-            Debug.Log(collision.transform.GetComponent<Item>().item.name);
-            if (bloomery.AddItem(collision.transform.GetComponent<Item>().item))
-            {
-                Destroy(collision.gameObject);
-            }
-            else
-            {
-                collision.gameObject.GetComponent<Rigidbody>().AddForce(new Vector3(UnityEngine.Random.Range(0, 20), 20, UnityEngine.Random.Range(0, 20)) * 40);
-            }
+            Destroy(collision.gameObject);
         }
-        catch
+        else
         {
-            //nothing
+            collision.gameObject.GetComponent<Rigidbody>().AddForce(new Vector3(UnityEngine.Random.Range(0, 20), 20, UnityEngine.Random.Range(0, 20)) * 40);
         }
     }
 }

@@ -2,53 +2,82 @@ using UnityEngine;
 
 public class TempManager : MonoBehaviour
 {
-    private Items item;
+    private Items itemScript;
 
-    public float currentHeat = 0;
+    public float maxHeat = 360f;
+    private float heatPercent = 0f;
     public bool timerEnabled = false;
     private Renderer rend;
-    private Color baseColor;
+    private Material mat;
+    private Gradient heatGradient;
+    private WorkstationScript WS;
+
+    private float difficultyBounus = 0.1f;
 
     private void Awake()
     {
-        item = GetComponent<Items>();
+        WS = FindFirstObjectByType<WorkstationScript>();
+        itemScript = GetComponent<Items>();
         rend = GetComponentInChildren<Renderer>();
         if (rend != null)
         {
-            baseColor = rend.material.color;
+            mat = rend.material;
+            mat.EnableKeyword("_EMISSION");
         }
 
-        currentHeat = item.heatTimer;
+        CreateGradient();
     }
 
     void Update()
     {
-        if (!timerEnabled)
-        {
-            currentHeat = item.heatTimer;
+        if (WS.currentSmithingMode == SmithingMode.Normal)
+            difficultyBounus = 0.1f;
+        else
+            difficultyBounus = 0.4f;
+
+        if (itemScript.heatTimer <= 0)
             return;
+
+        if (timerEnabled)
+        {
+            float k = 0.05f * difficultyBounus;
+            float newHeat = itemScript.heatTimer * Mathf.Exp(-k * Time.deltaTime);
+
+            float heatLost = itemScript.heatTimer - newHeat;
+            float maxHeatLossPerSecond = 2.3f; // maximum heat loss per second
+
+            heatLost = Mathf.Clamp(heatLost, 0, maxHeatLossPerSecond * Time.deltaTime);
+
+            itemScript.heatTimer -= heatLost;
+            itemScript.heatTimer = Mathf.Clamp(itemScript.heatTimer, 0, maxHeat * 2);
         }
 
-        currentHeat -= Time.deltaTime;
+        heatPercent = Mathf.Clamp01(itemScript.heatTimer / 160f);
+        Color emissionColor = heatGradient.Evaluate(heatPercent);
+        float intensity = Mathf.Lerp(0f, 4f, heatPercent);
 
-        item.heatTimer = currentHeat;
-        ModifyColor();
-
-        if (currentHeat <= 0)
-            this.enabled = false;
+        mat.SetColor("_EmissionColor", emissionColor * intensity);
     }
 
-    private void ModifyColor()
+
+    private void CreateGradient()
     {
-        if (rend == null) return;
+        heatGradient = new Gradient();
 
-        float maxTemp = 200f;
-        float heatPercent = Mathf.Clamp01(item.heatTimer / maxTemp);
-
-        Color heatTint = new Color(1f, 0.35f, 0.05f);
-
-        Color finalColor = Color.Lerp(baseColor, heatTint, heatPercent * 0.5f);
-
-        rend.material.color = finalColor;
+        heatGradient.SetKeys(
+            new GradientColorKey[]
+            {
+                new GradientColorKey(Color.black, 0f),
+                new GradientColorKey(new Color(0.4f, 0f, 0f), 0.25f), // dark red
+                new GradientColorKey(Color.red, 0.5f),
+                new GradientColorKey(new Color(1f, 0.5f, 0f), 0.75f), // orange
+                new GradientColorKey(Color.yellow, 1f)
+            },
+            new GradientAlphaKey[]
+            {
+                new GradientAlphaKey(1f,0f),
+                new GradientAlphaKey(1f,1f)
+            }
+        );
     }
 }

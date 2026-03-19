@@ -25,7 +25,6 @@ public class WorkstationScript : MonoBehaviour
     [SerializeField] private Button EditB;
     [SerializeField] private Button TongButton;
 
-    [SerializeField] private Items Emtpy;
     [SerializeField] private float minClickWaitTime = 0.2f;
 
     [SerializeField] private GameObject WorkstationUI;
@@ -66,8 +65,8 @@ public class WorkstationScript : MonoBehaviour
 
     void Start()
     {
-        itemOnTongs = Emtpy;
-        itemOnAnvil = Emtpy;
+        itemOnTongs = null;
+        itemOnAnvil = null;
         mainVCam.SetActive(false);
         anvilVCam.SetActive(false);
         SmeltVCam.SetActive(false);
@@ -96,7 +95,12 @@ public class WorkstationScript : MonoBehaviour
         {
             if(!isClicking)
                 if (usingTongs)
+                {
                     UseTongs();
+                    StartCoroutine(letGrab());
+                    StartCoroutine(clickWait());
+                    usingTongs = false;
+                }
         }
 
         if (Vector3.Distance(AnvilPos.transform.position, playerController.GetPlayerPos()) < rangeInteraction)
@@ -143,22 +147,17 @@ public class WorkstationScript : MonoBehaviour
         RaycastHit hit;
         if (Physics.Raycast(ray, out hit, rangeInteraction, itemAndAnvilMask))
         {
-            var item = anvilCrafter.GetItemFromHit(hit);
-            if(item != null)
+            var itemScript = anvilCrafter.GetItemScriptFromHit(hit);
+            if(itemScript != null && itemOnTongs == null)
             {
-                itemOnAnvil = item.item;
+                itemOnAnvil = itemScript;
                 if (itemOnAnvil.type != Itemtype.Chunk || itemOnAnvil.type != Itemtype.Dust)
                     PutItemOnTongs(hit);
+                return;
             }
-            else
-                if(itemOnTongs != Emtpy)
-                    TakeItemOffTongs(hit);
-
-            usingTongs = false;
+            if (itemOnTongs != null)
+                TakeItemOffTongs(hit);
         }
-
-        StartCoroutine(letGrab());
-        StartCoroutine(clickWait());
     }
 
     private IEnumerator clickWait()
@@ -250,20 +249,23 @@ public class WorkstationScript : MonoBehaviour
 
     private void TakeItemOffTongs(RaycastHit hit)
     {
-
+        Debug.Log("take off tongs");
         Tongs.GetComponent<Animator>().SetBool("TongGrab", true);
         objOnTongs.GetComponent<Rigidbody>().useGravity = true;
         objOnTongs.GetComponent<Collider>().enabled = true;
         objOnTongs.transform.position = hit.point + new Vector3(0, 0, 0.1f);
+        Debug.Log("258");
+
         objOnTongs.transform.SetParent(itemDefaultParents.transform);
         objOnTongs = null;
-        itemOnTongs = Emtpy;
+        itemOnTongs = null;
+        Debug.Log("261");
         smelteryScript.HandleItemOnTongs();
     }
     private void PutItemOnTongs(RaycastHit hit)
     {
         GameObject obj = hit.transform.gameObject;
-        if (itemOnTongs == Emtpy)
+        if (itemOnTongs == null)
         {
             Tongs.GetComponent<Animator>().SetBool("TongGrab", true);
             StartCoroutine(TongPlaceDelay(obj));
@@ -303,7 +305,7 @@ public class WorkstationScript : MonoBehaviour
         objOnTongs = obj;
 
         itemOnTongs = itemOnAnvil;
-        itemOnAnvil = Emtpy;
+        itemOnAnvil = null;
         smelteryScript.HandleItemOnTongs();
     }
 

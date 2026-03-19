@@ -44,8 +44,6 @@ public class Smeltery : MonoBehaviour
     [SerializeField] private GameObject Fire;
     [SerializeField] private Animator Tongs;
     [SerializeField] private Light heatLight;
-    private Renderer rend;
-    private Color baseColor;
 
     [Header("Tier Settings")]
     [SerializeField] private int tierLevel = 1; // 1–8
@@ -54,10 +52,9 @@ public class Smeltery : MonoBehaviour
     private float heatDecreaseRate;
 
     [Header("Smeltery State")]
-    public Items currentItem;
+    public Items currentItemScript;
     private GameObject currentObj;
-    [SerializeField] private Items EmptyItem;
-    [SerializeField] private Items CharItem;
+    [SerializeField] private int CharItemID = 101;
     private float heat = 0f;
     private float charcoalFuel = 0f;
     private bool inFire = false;
@@ -82,11 +79,12 @@ public class Smeltery : MonoBehaviour
     private int requiredHeatLevel;
     private Coroutine heatingCheckCoroutine;
     private Coroutine curingCheckCoroutine;
+    private TempManager currentTM;
 
     private void Start()
     {
         SetTierValues();
-        currentItem = EmptyItem;
+        currentItemScript = null;
 
         PutInFireButton.onClick.AddListener(ToggleFire);
         UpdateUI();
@@ -99,7 +97,7 @@ public class Smeltery : MonoBehaviour
         HandleItemHeating();
 
         // Check if item is in smeltery and not empty
-        if (currentItem != null && currentItem != EmptyItem)
+        if (currentItemScript != null)
         {
             HandleCuringTimer();
         }
@@ -143,7 +141,7 @@ public class Smeltery : MonoBehaviour
         heat = Mathf.Clamp(heat, 0, maxTemp);
 
         // Timer for stage (optional curing logic)
-        if (heat > 0 && currentItem != EmptyItem)
+        if (heat > 0 && currentItemScript != null)
             timeAtStage += Time.deltaTime;
         else
             timeAtStage = 0f;
@@ -170,45 +168,28 @@ public class Smeltery : MonoBehaviour
         // In-fire UI
         if (InFireUI != null)
             InFireUI.SetActive(inFire);
-
-        //COLOR visual
-        if (currentObj != null)
-        {
-            ModifyColor();
-        }
     }
 
     public void HandleItemOnTongs()
     {
         if (workstationScript == null) return;
 
-        currentItem = workstationScript.getItemOnTongs();
+        currentItemScript = workstationScript.getItemOnTongs();
         currentObj = workstationScript.getObjOnTongs();
-
+        //Debug.Log("current obj " + currentObj.name);
         if (currentObj == null) return;
-
-        rend = currentObj.GetComponentInChildren<Renderer>();
-        if (rend == null) return;
-
-        if (currentItem.baseColor == default)
-        {
-            baseColor = rend.material.color;
-            currentItem.baseColor = baseColor;
-        }
-        else
-        {
-            baseColor = currentItem.baseColor;
-        }
+        UpdatingItemTManager();
     }
+    
     private void HandleCuringTimer()
     {
-        if (currentItem == null || currentItem == EmptyItem) return;
+        if (currentItemScript == null) return;
 
         // If heat changed more than threshold, reset the stable timer
-        if (Mathf.Abs(currentItem.heatTimer - heatAtCheckStart) > heatStableThreshold)
+        if (Mathf.Abs(currentItemScript.heatTimer - heatAtCheckStart) > heatStableThreshold)
         {
             heatCheckTimer = 0f;
-            heatAtCheckStart = currentItem.heatTimer; // restart from new heat
+            heatAtCheckStart = currentItemScript.heatTimer; // restart from new heat
             timeAtStage = 0f;                         // reset curing timer
             return;
         }
@@ -224,30 +205,33 @@ public class Smeltery : MonoBehaviour
     }
     private void HandleItemHeating()
     {
-        if (currentObj == null || currentItem == EmptyItem) return;
+        if (currentObj == null || !inFire) return;
 
-        float heatDiff = heat - currentItem.heatTimer;
+        float heatDiff = heat - currentItemScript.heatTimer;
 
         // Only transfer if item is cooler than smeltery
         if (heatDiff > 0.01f)
         {
+            currentTM.timerEnabled = false;
             // Realistic transfer: proportional to difference
             float transferRate = 0.2f; // fraction per second
-            currentItem.heatTimer += heatDiff * transferRate * Time.deltaTime;
+            currentItemScript.heatTimer += heatDiff * transferRate * Time.deltaTime;
 
             // Cutoff: if very close to smeltery heat, snap to it
-            if (Mathf.Abs(heat - currentItem.heatTimer) < 0.5f)
-                currentItem.heatTimer = heat;
+            if (Mathf.Abs(heat - currentItemScript.heatTimer) < 0.5f)
+                currentItemScript.heatTimer = heat;
         }
+        else
+            currentTM.timerEnabled = true;
 
         float cutoff = heat * 0.95f; 
-        if (currentItem.heatTimer > cutoff)
-            currentItem.heatTimer = cutoff;
+        if (currentItemScript.heatTimer > cutoff)
+            currentItemScript.heatTimer = cutoff;
     }
     private int GetCurrentItemHeatLevel()
     {
-        if (currentItem == null) return 0;
-        return Mathf.FloorToInt(currentItem.heatTimer / 20f);
+        if (currentItemScript == null) return 0;
+        return Mathf.FloorToInt(currentItemScript.heatTimer / 20f);
     }
 
     #endregion
@@ -260,9 +244,9 @@ public class Smeltery : MonoBehaviour
     }
     private void StartCuringCheck()
     {
-        if (currentItem == null || currentItem == EmptyItem) return;
+        if (currentItemScript == null || !inFire) return;
 
-        Recipe curingRecipe = recipeManager.FindRecipe(PhaseType.Curing, currentItem.itemID);
+        Recipe curingRecipe = recipeManager.FindRecipe(PhaseType.Curing, currentItemScript.itemID);
         if (curingRecipe == null) return;
 
         // Stop any existing coroutine
@@ -275,7 +259,7 @@ public class Smeltery : MonoBehaviour
     {
         if (item == null) return;
 
-        currentItem = item;
+        currentItemScript = item;
 
         StartCuringCheck();
         StartHeatingCheck();
@@ -284,7 +268,7 @@ public class Smeltery : MonoBehaviour
     private void StartHeatingCheck()
     {
         // Find the heating recipe once
-        currentHeatingRecipe = recipeManager.FindRecipe(PhaseType.Heating, currentItem.itemID);
+        currentHeatingRecipe = recipeManager.FindRecipe(PhaseType.Heating, currentItemScript.itemID);
 
         if (currentHeatingRecipe != null)
         {
@@ -299,34 +283,24 @@ public class Smeltery : MonoBehaviour
         }
     }
 
-    public void RemoveItemFromSmeltery()
+    public void UpdatingItemTManager()
     {
-        if (currentObj == null || currentItem == EmptyItem || currentItem == null) return;
+        if (currentObj == null || currentItemScript == null) return;
 
-        // Add TempManager to item if not present
         try
         {
+            currentTM = currentObj.GetComponent<TempManager>();
+            if (currentTM == null)
+                currentTM = currentObj.AddComponent<TempManager>();
 
-            TempManager tm  = currentObj.GetComponent<TempManager>();
-            if (tm == null)
-                tm = currentObj.AddComponent<TempManager>();
-
-            tm.currentHeat = currentItem.heatTimer;
-            tm.enabled = true;
+            currentTM.timerEnabled = true;
+            currentTM.enabled = true;
         }
         catch
         {
             //error
             return;
         }
-
-        
-        // Reset smeltery state
-        currentItem = EmptyItem;
-        currentObj = null;
-        heat = 0f;
-        timeAtStage = 0f;
-        inFire = false;
     }
 
     public void ToggleFire()
@@ -335,6 +309,12 @@ public class Smeltery : MonoBehaviour
 
         if (Tongs != null)
             Tongs.SetBool("FireTongs", inFire);
+
+        if (currentTM == null)
+            return;
+
+        currentTM.timerEnabled = !inFire;
+
     }
 
     #endregion
@@ -343,12 +323,10 @@ public class Smeltery : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        Item itemComponent = other.GetComponent<Item>();
+        Items itemComponent = other.GetComponent<Items>();
         if (itemComponent == null) return;
 
-        Items pickedItem = itemComponent.item;
-
-        if (pickedItem == CharItem)
+        if (itemComponent.itemID == CharItemID)
         {
             AddCharcoal(60f * tierLevel);
             Destroy(other.gameObject);
@@ -363,66 +341,51 @@ public class Smeltery : MonoBehaviour
             }
         }
     }
-
-    private void ModifyColor()
-    {
-        if (rend == null) return;
-
-        float max = 200f;
-        float heatPercent = Mathf.Clamp01(currentItem.heatTimer / max);
-
-        Color heatTint = new Color(1f, 0.35f, 0.05f);
-
-        Color finalColor = Color.Lerp(baseColor, heatTint, heatPercent * 0.5f);
-
-        rend.material.color = finalColor;
-    }
-
     #endregion
 
     #region Crafting section
 
     private void CheckHeatingRecipes()
     {
-        if (currentItem == null || currentItem == EmptyItem) return;
+        if (currentItemScript == null) return;
 
         // Find the first recipe for this item in the Heating phase
-        Recipe heatingRecipe = recipeManager.FindRecipe(PhaseType.Heating, currentItem.itemID);
+        Recipe heatingRecipe = recipeManager.FindRecipe(PhaseType.Heating, currentItemScript.itemID);
         if (heatingRecipe == null) return;
 
         int heatlvl = GetCurrentItemHeatLevel();
-        if (heatingRecipe.outputItemID == currentItem.itemID)
+        if (heatingRecipe.outputItemID == currentItemScript.itemID)
         {
-            currentItem.currentPhase = PhaseType.Heating;
+            currentItemScript.currentPhase = PhaseType.Heating;
             return;
         }
 
         // Check if the item reached the required heat
         if (heatlvl >= heatingRecipe.requiredValue)
         {
-            Items newItem = itemDatabase.GetItemByID(heatingRecipe.outputItemID);
+            ItemData newItem = itemDatabase.GetItemDataById(heatingRecipe.outputItemID);
             if (newItem != null)
             {
-                float oldHeat = currentItem.heatTimer;
+                float oldHeat = currentItemScript.heatTimer;
                 ModelChange(newItem);
-                currentItem = newItem;
-                currentItem.heatTimer = oldHeat;
+                currentItemScript.heatTimer = oldHeat;
                 HandleItemOnTongs();
             }
         }
     }
 
-    private void ModelChange(Items changeTo)
+    private void ModelChange(ItemData changeTo)
     {
+        //currentItemScript = newItem;
         //will cover this later when i do visual edits to all the items.
     }
 
     private void CheckCuringRecipes()
     {
-        if (currentItem == null || currentItem == EmptyItem) return;
+        if (currentItemScript == null) return;
 
         // Only check curing if the item has been at the current stage long enough
-        Recipe curingRecipe = recipeManager.FindRecipe(PhaseType.Curing, currentItem.itemID);
+        Recipe curingRecipe = recipeManager.FindRecipe(PhaseType.Curing, currentItemScript.itemID);
         if (curingRecipe == null) return;
 
 
@@ -435,13 +398,12 @@ public class Smeltery : MonoBehaviour
         {
             if (timeAtStage >= timeInlvl)
             {
-                Items newItem = itemDatabase.GetItemByID(curingRecipe.outputItemID);
+                ItemData newItem = itemDatabase.GetItemDataById(curingRecipe.outputItemID);
                 if (newItem != null)
                 {
-                    float oldHeat = currentItem.heatTimer;
+                    float oldHeat = currentItemScript.heatTimer;
                     ModelChange(newItem);
-                    currentItem = newItem;
-                    currentItem.heatTimer = oldHeat;
+                    currentItemScript.heatTimer = oldHeat;
                     HandleItemOnTongs();
                 }
             }
@@ -450,15 +412,15 @@ public class Smeltery : MonoBehaviour
 
     private IEnumerator HeatingCheckRoutine()
     {
-        if (currentItem == null || currentHeatingRecipe == null) yield break;
+        if (currentItemScript == null || currentHeatingRecipe == null) yield break;
 
         // Convert heat level to required heat
         float targetHeat = requiredHeatLevel * 20f;
 
         // Wait until item reaches target heat
-        while (currentItem != null && currentItem.heatTimer < targetHeat)
+        while (currentItemScript != null && currentItemScript.heatTimer < targetHeat)
         {
-            float heatDiff = targetHeat - currentItem.heatTimer;
+            float heatDiff = targetHeat - currentItemScript.heatTimer;
 
             // Estimate time to reach target heat
             float estimatedTime = heatDiff / (heatIncreaseRate * 0.2f); // 0.2f = transferRate in HandleItemHeating
@@ -466,33 +428,32 @@ public class Smeltery : MonoBehaviour
         }
 
         // Item reached target heat — apply recipe
-        if (currentItem != null)
+        if (currentItemScript != null)
         {
-            Items newItem = itemDatabase.GetItemByID(currentHeatingRecipe.outputItemID);
+            ItemData newItem = itemDatabase.GetItemDataById(currentHeatingRecipe.outputItemID);
             if (newItem != null)
             {
-                float oldHeat = currentItem.heatTimer;
+                float oldHeat = currentItemScript.heatTimer;
                 ModelChange(newItem);
-                currentItem = newItem;
-                currentItem.heatTimer = oldHeat;
+                currentItemScript.heatTimer = oldHeat;
                 HandleItemOnTongs();
             }
         }
     }
     private IEnumerator CuringCheckRoutine(Recipe curingRecipe)
     {
-        if (currentItem == null || curingRecipe == null) yield break;
+        if (currentItemScript == null || curingRecipe == null) yield break;
 
         int requiredHeatLevel = Mathf.FloorToInt(curingRecipe.requiredValue);
 
-        while (currentItem != null)
+        while (currentItemScript != null)
         {
             int heatLevel = GetCurrentItemHeatLevel();
 
             if (heatLevel >= requiredHeatLevel)
             {
                 // Estimate time to stable heat
-                float heatDiff = Mathf.Abs(currentItem.heatTimer - heatAtCheckStart);
+                float heatDiff = Mathf.Abs(currentItemScript.heatTimer - heatAtCheckStart);
                 float timeToStableHeat = Mathf.Max(0f, (heatDiff > heatStableThreshold) ? (heatDiff - heatStableThreshold) / (heatIncreaseRate * 0.2f) : 0f);
 
                 // Time left to reach curing delay
@@ -503,18 +464,17 @@ public class Smeltery : MonoBehaviour
                 yield return new WaitForSeconds(Mathf.Max(waitTime, 0.1f)); // wait at least 0.1s
 
                 // After wait, check if item is still valid
-                if (currentItem == null) yield break;
+                if (currentItemScript == null) yield break;
 
                 // If still meets condition, apply recipe
                 if (timeAtStage >= requiredHeatLevel * 15f) // or your timeInLevel formula
                 {
-                    Items newItem = itemDatabase.GetItemByID(curingRecipe.outputItemID);
+                    ItemData newItem = itemDatabase.GetItemDataById(curingRecipe.outputItemID);
                     if (newItem != null)
                     {
-                        float oldHeat = currentItem.heatTimer;
+                        float oldHeat = currentItemScript.heatTimer;
                         ModelChange(newItem);
-                        currentItem = newItem;
-                        currentItem.heatTimer = oldHeat;
+                        currentItemScript.heatTimer = oldHeat;
                         HandleItemOnTongs();
                     }
                     yield break; // cured, stop coroutine

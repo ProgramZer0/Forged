@@ -5,7 +5,7 @@ using UnityEngine;
 public class Harvests : MonoBehaviour
 {
     public Harvestables harvestable;
-
+    [SerializeField] private ItemDatabase ID;
     private float RangeofHarvest;
     private int hotbarSelected;
     private Controls playerControls;
@@ -44,7 +44,8 @@ public class Harvests : MonoBehaviour
                                 Destroy(gameObject);
                                 for (int i = 0; i < harvestable.itemAmmount; i++)
                                 {
-                                    GameObject o = UnityEngine.Object.Instantiate(harvestable.dropItem.model, temchop, Quaternion.Euler(90, 90, 90));
+                                    GameObject o = ID.SpawnItem(harvestable.dropItem.itemID, temchop, Quaternion.Euler(90, 90, 90));
+
                                     temchop.y = temchop.y + .5f;
                                 }
                             }
@@ -63,12 +64,12 @@ public class Harvests : MonoBehaviour
 
                                 GetComponent<OreUtils>().FellOre();
 
-                                Destroy(gameObject);
                                 for (int i = 0; i < harvestable.itemAmmount; i++)
                                 {
-                                    GameObject o = UnityEngine.Object.Instantiate(harvestable.dropItem.model, temchop, Quaternion.Euler(90, 90, 90));
+                                    GameObject o = ID.SpawnItem(harvestable.dropItem.itemID, temchop, Quaternion.Euler(90, 90, 90));
                                     temchop.y = temchop.y + 1f;
                                 }
+                                Destroy(gameObject);
                             }
                         }
                     }
