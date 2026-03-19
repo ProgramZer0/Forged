@@ -1,0 +1,12 @@
+{
+  "items": [
+    {
+      "itemID": 63,
+      "itemName": "Luminescent ElectrumIngot",
+      "itemDescription": "Silver and gold melted and mixed together, cast into a mold.",
+      "cost": "225",
+      "prefabPath": "Prefabs/ElectrumIngot",
+      "type": 3
+    }
+  ]
+}

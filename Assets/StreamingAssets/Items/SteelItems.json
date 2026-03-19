@@ -1,0 +1,20 @@
+{
+  "items": [
+    {
+      "itemID": 17,
+      "itemName": "Odd Steel Bloom",
+      "itemDescription": "Iron bloom slowly converted to Odd Steel with charcoal.",
+      "cost": "20",
+      "prefabPath": "Prefabs/SteelBloom",
+      "type": 1
+    },
+    {
+      "itemID": 18,
+      "itemName": "Odd Steel Ingot",
+      "itemDescription": "Refined steel, slag condensed away on high heat.",
+      "cost": "40",
+      "prefabPath": "Prefabs/SteelIngot",
+      "type": 3
+    }
+  ]
+}

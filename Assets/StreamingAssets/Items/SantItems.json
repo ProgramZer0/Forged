@@ -1,0 +1,60 @@
+{
+  "items": [
+    {
+      "itemID": 51,
+      "itemName": "Healing Santillum Ore",
+      "itemDescription": "A chunk of raw Healing Santillum ore.",
+      "cost": "50",
+      "prefabPath": "Prefabs/SantillumOre",
+      "type": 8
+    },
+    {
+      "itemID": 52,
+      "itemName": "Healing Santillum Chunk",
+      "itemDescription": "Chunks of santillum.",
+      "cost": "100",
+      "prefabPath": "none",
+      "type": 2
+    },
+    {
+      "itemID": 53,
+      "itemName": "Healing Santillum Dust",
+      "itemDescription": "Finely ground Healing Santillum dust.",
+      "cost": "90",
+      "prefabPath": "Prefabs/SantillumDust",
+      "type": 0
+    },
+    {
+      "itemID": 54,
+      "itemName": "Healing Santillum Healing Solution",
+      "itemDescription": "Healing Santillum dust dissolved in a healing potion bucket.",
+      "cost": "130",
+      "prefabPath": "none",
+      "type": 9
+    },
+    {
+      "itemID": 55,
+      "itemName": "Healing Santillum Crystal",
+      "itemDescription": "Crystals pulled from the healing solution.",
+      "cost": "170",
+      "prefabPath": "Prefabs/SantillumCrystal",
+      "type": 10
+    },
+    {
+      "itemID": 56,
+      "itemName": "Pure Santillum Crystal Dust",
+      "itemDescription": "Crystals smashed to dust, ready to cast.",
+      "cost": "200",
+      "prefabPath": "Prefabs/SantillumPure",
+      "type": 0
+    },
+    {
+      "itemID": 57,
+      "itemName": "Healing Santillum Ingot",
+      "itemDescription": "Cast santillum, glowing faintly with healing energy.",
+      "cost": "250",
+      "prefabPath": "Prefabs/SantillumIngot",
+      "type": 3
+    }
+  ]
+}

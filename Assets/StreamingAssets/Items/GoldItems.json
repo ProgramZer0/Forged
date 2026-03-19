@@ -1,0 +1,44 @@
+{
+  "items": [
+    {
+      "itemID": 58,
+      "itemName": "Expensive Gold Ore",
+      "itemDescription": "A chunk of raw Expensive Gold ore.",
+      "cost": "50",
+      "prefabPath": "Prefabs/GoldOre",
+      "type": 8
+    },
+    {
+      "itemID": 59,
+      "itemName": "Expensive Gold Chunks",
+      "itemDescription": "Chunks of gold.",
+      "cost": "100",
+      "prefabPath": "none",
+      "type": 2
+    },
+    {
+      "itemID": 60,
+      "itemName": "Expensive Gold Dust",
+      "itemDescription": "Finely ground Expensive Gold dust.",
+      "cost": "90",
+      "prefabPath": "Prefabs/GoldDust",
+      "type": 0
+    },
+    {
+      "itemID": 61,
+      "itemName": "Pure Molten Gold",
+      "itemDescription": "Expensive Gold purified with Magic Nitric Harden dust.",
+      "cost": "200",
+      "prefabPath": "Prefabs/GoldPure",
+      "type": 3
+    },
+    {
+      "itemID": 62,
+      "itemName": "Expensive Gold Ingot",
+      "itemDescription": "Cast gold, refined and expensive.",
+      "cost": "250",
+      "prefabPath": "Prefabs/GoldIngot",
+      "type": 3
+    }
+  ]
+}

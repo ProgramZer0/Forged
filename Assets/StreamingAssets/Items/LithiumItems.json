@@ -1,0 +1,52 @@
+{
+  "items": [
+    {
+      "itemID": 68,
+      "itemName": "Ichorous Lithium Ore",
+      "itemDescription": "Raw Ichorous Lithium ore — handle with care, it is volatile.",
+      "cost": "35",
+      "prefabPath": "Prefabs/LithiumOre",
+      "type": 8
+    },
+    {
+      "itemID": 40,
+      "itemName": "Ichorous Lithium Dust",
+      "itemDescription": "Ichorous Lithium ground to dust — it will explode if mishandled.",
+      "cost": "55",
+      "prefabPath": "Prefabs/LithiumDust",
+      "type": 0
+    },
+    {
+      "itemID": 70,
+      "itemName": "Lithium Infused Water",
+      "itemDescription": "Ichorous Lithium infused water.",
+      "cost": "80",
+      "prefabPath": "none",
+      "type": 9
+    },
+    {
+      "itemID": 71,
+      "itemName": "Ichorous Lithium Crystals",
+      "itemDescription": "Ichorous Lithium dust crystallised safely in crystal water.",
+      "cost": "110",
+      "prefabPath": "Prefabs/LithiumCrystal",
+      "type": 10
+    },
+    {
+      "itemID": 72,
+      "itemName": "Pure Crystal Lithium Dust",
+      "itemDescription": "Ichorous Lithium crystals smashed to dust, stable and ready to melt.",
+      "cost": "150",
+      "prefabPath": "Prefabs/LithiumPure",
+      "type": 0
+    },
+    {
+      "itemID": 73,
+      "itemName": "Ichorous Lithium Ingot",
+      "itemDescription": "Cast lithium, surprisingly light and stable.",
+      "cost": "175",
+      "prefabPath": "Prefabs/LithiumIngot",
+      "type": 3
+    }
+  ]
+}

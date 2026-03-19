@@ -2,8 +2,41 @@ using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
-public enum Itemtype { Dust, Bloom, Chunk, Metal, Potions, Equipment, Tools, Default, Ore }
-public enum MetalType { Tin, Copper, Bronze, Iron, Steel, Silver, Nickel, Titanium, Oppa, Nameless, Moabilimite, Santillum, Gold, Electrum, Lithium, Poillum, NONE }
+public enum Itemtype
+{
+    Dust,      // 0
+    Bloom,     // 1
+    Chunk,     // 2
+    Metal,     // 3
+    Potions,   // 4
+    Equipment, // 5
+    Tools,     // 6
+    Default,   // 7
+    Ore,       // 8
+    Watered,   // 9
+    Crystal    // 10
+}
+
+public enum MetalType
+{
+    Tin,          // 0
+    Copper,       // 1
+    Bronze,       // 2
+    Iron,         // 3
+    Steel,        // 4
+    Silver,       // 5
+    Nickel,       // 6
+    Titanium,     // 7
+    Oppa,         // 8
+    Nameless,     // 9
+    Moabilimite,  // 10
+    Santillum,    // 11
+    Gold,         // 12
+    Electrum,     // 13
+    Lithium,      // 14
+    Poillum,      // 15
+    NONE          // 16
+}
 
 [System.Serializable]
 public class ItemData
@@ -80,6 +113,9 @@ public class ItemDatabase : MonoBehaviour
         }
 
         itemsByID[item.itemID] = item;
+
+        if (item.prefabPath == "none")
+            return;
 
         GameObject prefab = Resources.Load<GameObject>(item.prefabPath);
 

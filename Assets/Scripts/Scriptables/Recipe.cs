@@ -13,7 +13,7 @@ public enum PhaseType
     Exhausting, //10
     Moisturizing, //11
     SunExhaust, //12
-    FirePit
+    FirePit //13
 }
 
 [System.Serializable]

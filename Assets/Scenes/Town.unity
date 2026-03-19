@@ -36757,7 +36757,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1bce7f21d94e2024c9feda6b83a55d1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemDatabase
-  resourcesFolder: CraftingItems
+  folderDirName: Items
 --- !u!1001 &440011398
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -44727,7 +44727,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 462954c475982064983fa631e383c592, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  key: {fileID: 11400000, guid: 67ff7793932d48f4087fbc8421869592, type: 2}
+  keyID: 0
   DoorNumber: 2
 --- !u!65 &521517202
 BoxCollider:
@@ -51561,7 +51561,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 462954c475982064983fa631e383c592, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  key: {fileID: 11400000, guid: 2590220186b25ba49bd168e38976723e, type: 2}
+  keyID: 0
   DoorNumber: 3
 --- !u!65 &566993576
 BoxCollider:
@@ -58903,7 +58903,6 @@ MonoBehaviour:
   AnvilB: {fileID: 760419157}
   EditB: {fileID: 404430039}
   TongButton: {fileID: 1008259382}
-  Emtpy: {fileID: 11400000, guid: 5d292342d5eccec42b40c5a49660334a, type: 2}
   minClickWaitTime: 0.2
   WorkstationUI: {fileID: 655690727}
   WorkstationButtons: {fileID: 1431444449}
@@ -70303,7 +70302,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   objonAnvil: {fileID: 0}
-  emptyItem: {fileID: 11400000, guid: 5d292342d5eccec42b40c5a49660334a, type: 2}
   workstation: {fileID: 751058504}
   anvilMgr: {fileID: 919132147773256651}
 --- !u!1001 &917868791
@@ -90994,8 +90992,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5f31ec288ad2b94388183bb000bfdbe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  EmptyItem: {fileID: 11400000, guid: 5d292342d5eccec42b40c5a49660334a, type: 2}
-  charcoalItem: {fileID: 11400000, guid: 937a9b0f578f4b14c9afa890b994b5a2, type: 2}
+  charcoalItemID: 101
   defaultTimePerCharcoal: 16
   defaultMaxRatio: 0.25
   bloomEffects: {fileID: 1656454352}
@@ -91680,7 +91677,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 462954c475982064983fa631e383c592, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  key: {fileID: 11400000, guid: 07b66a4377712f24ba4ad57e16b615ef, type: 2}
+  keyID: 0
   DoorNumber: 1
 --- !u!65 &1359865550
 BoxCollider:
@@ -142753,12 +142750,13 @@ MonoBehaviour:
   charWood3: {fileID: 876158961696977461}
   WoodPlaced: {fileID: 1935992974}
   WoodBurning: {fileID: 1069362881}
-  charcoalItem: {fileID: 11400000, guid: 42cc8f0da6da43243a423e04356e50ea, type: 2}
+  charcoalItemID: 101
   fireReady: {fileID: 683105505}
   FireLight: {fileID: 1318182959}
   textTip: {fileID: 1417529629}
   WoodColor: {r: 0.8, g: 0.8, b: 0.8, a: 1}
   charWoodColor: {r: 0.8, g: 0.8, b: 0.8, a: 1}
+  ID: {fileID: 0}
 --- !u!1 &919132147773256649
 GameObject:
   m_ObjectHideFlags: 0
@@ -142793,6 +142791,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::AnvilCrafting
   AnvilPos: {fileID: 914790398}
   Force: {fileID: 1730020182}
+  perHitHeat: 2
   anvilMgr: {fileID: 919132147773256651}
   recipeManager: {fileID: 439208263}
   itemDatabase: {fileID: 439208265}
@@ -143204,9 +143203,8 @@ MonoBehaviour:
   Tongs: {fileID: 6914093669673124588}
   heatLight: {fileID: 2146127817}
   tierLevel: 1
-  currentItem: {fileID: 0}
-  EmptyItem: {fileID: 11400000, guid: 5d292342d5eccec42b40c5a49660334a, type: 2}
-  CharItem: {fileID: 11400000, guid: 42cc8f0da6da43243a423e04356e50ea, type: 2}
+  currentItemScript: {fileID: 0}
+  CharItemID: 101
   workstationScript: {fileID: 751058504}
   recipeManager: {fileID: 439208263}
   itemDatabase: {fileID: 439208265}

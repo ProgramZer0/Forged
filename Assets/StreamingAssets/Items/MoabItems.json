@@ -1,0 +1,28 @@
+{
+  "items": [
+    {
+      "itemID": 48,
+      "itemName": "Transformative Moabilimite Ore",
+      "itemDescription": "A chunk of raw Transformative Moabilimite ore.",
+      "cost": "40",
+      "prefabPath": "Prefabs/MoabOre",
+      "type": 8
+    },
+    {
+      "itemID": 49,
+      "itemName": "Moldable Moab",
+      "itemDescription": "Transformative Moabilimite ore soaked in water, now soft and shapeable.",
+      "cost": "70",
+      "prefabPath": "none",
+      "type": 9
+    },
+    {
+      "itemID": 50,
+      "itemName": "Transformative Moabilimite Ingot",
+      "itemDescription": "Transformative Moabilimite shaped on the anvil and cured on low heat.",
+      "cost": "200",
+      "prefabPath": "Prefabs/MoabIngot",
+      "type": 3
+    }
+  ]
+}

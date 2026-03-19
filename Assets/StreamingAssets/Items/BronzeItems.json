@@ -1,0 +1,20 @@
+{
+  "items": [
+    {
+      "itemID": 10,
+      "itemName": "Bronze Chunk Mix",
+      "itemDescription": "A mixture of copper and tin chunks, ready to smelt.",
+      "cost": "12",
+      "prefabPath": "none",
+      "type": 2
+    },
+    {
+      "itemID": 11,
+      "itemName": "Bronze Ingot",
+      "itemDescription": "Cast bronze, condensed to remove impurities.",
+      "cost": "30",
+      "prefabPath": "Prefabs/BronzeIngot",
+      "type": 3
+    }
+  ]
+}

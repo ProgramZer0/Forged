@@ -1,0 +1,36 @@
+{
+  "items": [
+    {
+      "itemID": 64,
+      "itemName": "Abiding Tungsten Ore",
+      "itemDescription": "A chunk of raw Abiding Tungsten ore.",
+      "cost": "18",
+      "prefabPath": "Prefabs/TungstenOre",
+      "type": 8
+    },
+    {
+      "itemID": 65,
+      "itemName": "Abiding Tungsten Chunks",
+      "itemDescription": "Chunks of tungsten.",
+      "cost": "36",
+      "prefabPath": "none",
+      "type": 2
+    },
+    {
+      "itemID": 66,
+      "itemName": "Abiding Tungsten Dust",
+      "itemDescription": "Finely ground Abiding Tungsten dust.",
+      "cost": "30",
+      "prefabPath": "Prefabs/TungstenDust",
+      "type": 0
+    },
+    {
+      "itemID": 67,
+      "itemName": "Abiding Tungsten Ingot",
+      "itemDescription": "Cast tungsten, condensed on high heat.",
+      "cost": "90",
+      "prefabPath": "Prefabs/TungstenIngot",
+      "type": 3
+    }
+  ]
+}

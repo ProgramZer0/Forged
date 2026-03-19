@@ -1,0 +1,36 @@
+{
+  "items": [
+    {
+      "itemID": 38,
+      "itemName": "Magnetic Nickel Ore",
+      "itemDescription": "A chunk of raw Magnetic Nickel ore.",
+      "cost": "7",
+      "prefabPath": "Prefabs/NickelOre",
+      "type": 8
+    },
+    {
+      "itemID": 25,
+      "itemName": "Magnetic Nickel Chunks",
+      "itemDescription": "Chunks of nickel.",
+      "cost": "14",
+      "prefabPath": "none",
+      "type": 2
+    },
+    {
+      "itemID": 26,
+      "itemName": "Magnetic Nickel Dust",
+      "itemDescription": "Finely ground Magnetic Nickel dust.",
+      "cost": "12",
+      "prefabPath": "Prefabs/NickelDust",
+      "type": 0
+    },
+    {
+      "itemID": 27,
+      "itemName": "Magnetic Nickel Ingot",
+      "itemDescription": "Cast nickel, condensed on high heat.",
+      "cost": "35",
+      "prefabPath": "Prefabs/NickelIngot",
+      "type": 3
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "items": [
+    {
+      "itemID": 34,
+      "itemName": "Interesting Oppa Ore",
+      "itemDescription": "A chunk of raw Interesting Oppa ore.",
+      "cost": "25",
+      "prefabPath": "Prefabs/OppaOre",
+      "type": 8
+    },
+    {
+      "itemID": 35,
+      "itemName": "Interesting Oppa Chunks",
+      "itemDescription": "Chunks of oppa.",
+      "cost": "50",
+      "prefabPath": "none",
+      "type": 2
+    },
+    {
+      "itemID": 36,
+      "itemName": "Interesting Oppa Dust",
+      "itemDescription": "Finely ground Interesting Oppa dust.",
+      "cost": "45",
+      "prefabPath": "Prefabs/OppaDust",
+      "type": 0
+    },
+    {
+      "itemID": 39,
+      "itemName": "Interesting Oppa Dust Mix ",
+      "itemDescription": "Interesting Oppa dust mixed with iron and magic dust",
+      "cost": "80",
+      "prefabPath": "Prefabs/OppaPureDust",
+      "type": 0
+    },
+    {
+      "itemID": 37,
+      "itemName": "Condensed Pure Interesting Oppa",
+      "itemDescription": "Interesting Oppa condensed on low heat, impurities removed.",
+      "cost": "100",
+      "prefabPath": "Prefabs/OppaBloom",
+      "type": 1
+    },
+    {
+      "itemID": 69,
+      "itemName": "Interesting Oppa Ingot",
+      "itemDescription": "Refined oppa, reshapeable on medium heat.",
+      "cost": "125",
+      "prefabPath": "Prefabs/OppaIngot",
+      "type": 3
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "items": [
+    {
+      "itemID": 41,
+      "itemName": "Nameless Ore",
+      "itemDescription": "A chunk of ore with no known name.",
+      "cost": "30",
+      "prefabPath": "Prefabs/NamelessOre",
+      "type": 8
+    },
+    {
+      "itemID": 42,
+      "itemName": "Nameless Chunk",
+      "itemDescription": "Chunks of nameless metal.",
+      "cost": "60",
+      "prefabPath": "none",
+      "type": 2
+    },
+    {
+      "itemID": 43,
+      "itemName": "Nameless Dust",
+      "itemDescription": "Finely ground nameless dust.",
+      "cost": "55",
+      "prefabPath": "Prefabs/NamelessDust",
+      "type": 0
+    },
+    {
+      "itemID": 44,
+      "itemName": "Watered Nameless",
+      "itemDescription": "Nameless material suspended in water.",
+      "cost": "70",
+      "prefabPath": "none",
+      "type": 9
+    },
+    {
+      "itemID": 45,
+      "itemName": "Nameless Crystal",
+      "itemDescription": "Nameless dust crystallised in crystal water.",
+      "cost": "100",
+      "prefabPath": "Prefabs/NamelessCrystal",
+      "type": 10
+    },
+    {
+      "itemID": 46,
+      "itemName": "Pure Nameless Crystal Dust",
+      "itemDescription": "Nameless Crystals smashed back to dust.",
+      "cost": "150",
+      "prefabPath": "Prefabs/NamelessPure",
+      "type": 0
+    },
+    {
+      "itemID": 47,
+      "itemName": "Nameless Ingot",
+      "itemDescription": "Cast nameless metal, origin still unknown.",
+      "cost": "200",
+      "prefabPath": "Prefabs/NamelessIngot",
+      "type": 3
+    }
+  ]
+}

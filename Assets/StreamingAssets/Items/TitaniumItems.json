@@ -1,0 +1,52 @@
+{
+  "items": [
+    {
+      "itemID": 28,
+      "itemName": "Survivable Titanium Ore",
+      "itemDescription": "A chunk of raw Survivable Titanium ore.",
+      "cost": "20",
+      "prefabPath": "Prefabs/TitaniumOre",
+      "type": 8
+    },
+    {
+      "itemID": 29,
+      "itemName": "Survivable Titanium Chunks",
+      "itemDescription": "Chunks of titanium.",
+      "cost": "40",
+      "prefabPath": "none",
+      "type": 2
+    },
+    {
+      "itemID": 30,
+      "itemName": "Survivable Titanium Dust",
+      "itemDescription": "Survivable Titanium hammered to dust, mixed with iron, silver and magic dust.",
+      "cost": "35",
+      "prefabPath": "Prefabs/TitaniumDust",
+      "type": 0
+    },
+    {
+      "itemID": 31,
+      "itemName": "Survivable Titanium Mix Dust",
+      "itemDescription": "Survivable Titanium dust blended with iron, silver and magic dust, ready for the exhaust.",
+      "cost": "50",
+      "prefabPath": "Prefabs/TitaniumImpure",
+      "type": 0
+    },
+    {
+      "itemID": 32,
+      "itemName": "Survivable Titanium Bloom",
+      "itemDescription": "Survivable Titanium bloom formed after exhaust melt and charcoal cooling.",
+      "cost": "80",
+      "prefabPath": "Prefabs/TitaniumBloom",
+      "type": 1
+    },
+    {
+      "itemID": 33,
+      "itemName": "Survivable Titanium Ingot",
+      "itemDescription": "Refined titanium, condensed on very high heat.",
+      "cost": "100",
+      "prefabPath": "Prefabs/TitaniumIngot",
+      "type": 3
+    }
+  ]
+}

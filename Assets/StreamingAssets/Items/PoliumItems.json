@@ -1,0 +1,28 @@
+{
+  "items": [
+    {
+      "itemID": 74,
+      "itemName": "Poillum Dust Mix",
+      "itemDescription": "Lithium crystal dust, gold, tungsten, iron and nickel dust combined.",
+      "cost": "200",
+      "prefabPath": "Prefabs/PoillumDust",
+      "type": 0
+    },
+    {
+      "itemID": 75,
+      "itemName": "Molten Poillum",
+      "itemDescription": "The dust mix smelted with sun exhaust and fused with molten titanium and bronze.",
+      "cost": "260",
+      "prefabPath": "Prefabs/PoillumImpure",
+      "type": 3
+    },
+    {
+      "itemID": 76,
+      "itemName": "Poillum Ingot",
+      "itemDescription": "Cast poillum — the alloy cannot be remelted once set.",
+      "cost": "300",
+      "prefabPath": "Prefabs/PoillumIngot",
+      "type": 3
+    }
+  ]
+}

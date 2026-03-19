@@ -1,0 +1,36 @@
+{
+  "items": [
+    {
+      "itemID": 6,
+      "itemName": "Electric Copper Ore",
+      "itemDescription": "A chunk of raw Electric Copper ore.",
+      "cost": "4",
+      "prefabPath": "Prefabs/CopperOre",
+      "type": 8
+    },
+    {
+      "itemID": 7,
+      "itemName": "Electric Copper Chunk",
+      "itemDescription": "Chunks of copper.",
+      "cost": "8",
+      "prefabPath": "none",
+      "type": 2
+    },
+    {
+      "itemID": 8,
+      "itemName": "Electric Copper Dust",
+      "itemDescription": "Finely ground Electric Copper dust.",
+      "cost": "7",
+      "prefabPath": "Prefabs/CopperDust",
+      "type": 0
+    },
+    {
+      "itemID": 9,
+      "itemName": "Electric Copper Ingot",
+      "itemDescription": "Electric Copper condensed three times on low heat.",
+      "cost": "20",
+      "prefabPath": "Prefabs/CopperIngot",
+      "type": 3
+    }
+  ]
+}

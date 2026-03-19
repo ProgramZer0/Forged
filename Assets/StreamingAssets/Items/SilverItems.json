@@ -1,0 +1,52 @@
+{
+  "items": [
+    {
+      "itemID": 19,
+      "itemName": "Bending Silver Ore",
+      "itemDescription": "A chunk of raw Bending Silver ore.",
+      "cost": "15",
+      "prefabPath": "Prefabs/SilverOre",
+      "type": 8
+    },
+    {
+      "itemID": 20,
+      "itemName": "Bending Silver Chunk",
+      "itemDescription": "Chunks of silver.",
+      "cost": "30",
+      "prefabPath": "none",
+      "type": 2
+    },
+    {
+      "itemID": 21,
+      "itemName": "Bending Silver Dust",
+      "itemDescription": "Finely ground Bending Silver dust.",
+      "cost": "25",
+      "prefabPath": "Prefabs/SilverDust",
+      "type": 0
+    },
+    {
+      "itemID": 22,
+      "itemName": "Impure Molten Silver",
+      "itemDescription": "Bending Silver dust melted in a bucket, still impure.",
+      "cost": "20",
+      "prefabPath": "Prefabs/SilverImpure",
+      "type": 3
+    },
+    {
+      "itemID": 23,
+      "itemName": "Pure Molten Silver",
+      "itemDescription": "Bending Silver purified with Magic Nitric Harden dust.",
+      "cost": "60",
+      "prefabPath": "Prefabs/SilverPure",
+      "type": 3
+    },
+    {
+      "itemID": 24,
+      "itemName": "Bending Silver Ingot",
+      "itemDescription": "Cast silver, bendable and pure.",
+      "cost": "75",
+      "prefabPath": "Prefabs/SilverIngot",
+      "type": 3
+    }
+  ]
+}

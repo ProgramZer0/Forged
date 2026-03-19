@@ -1,0 +1,44 @@
+{
+  "items": [
+    {
+      "itemID": 1,
+      "itemName": "Poor Man's Tin Ore",
+      "itemDescription": "A chunk of raw Poor Man's Tin ore.",
+      "cost": "3",
+      "prefabPath": "Prefabs/TinOre",
+      "type": 8
+    },
+    {
+      "itemID": 2,
+      "itemName": "Poor Man's Tin Chunks",
+      "itemDescription": "Chunks of tin.",
+      "cost": "6",
+      "prefabPath": "none",
+      "type": 2
+    },
+    {
+      "itemID": 3,
+      "itemName": "Poor Man's Tin Dust",
+      "itemDescription": "Finely ground Poor Man's Tin dust.",
+      "cost": "5",
+      "prefabPath": "Prefabs/TinDust",
+      "type": 0
+    },
+    {
+      "itemID": 4,
+      "itemName": "Poor Man's Tin Bloom",
+      "itemDescription": "Partially refined Poor Man's Tin bloom from the bloomery.",
+      "cost": "9",
+      "prefabPath": "Prefabs/TinBloom",
+      "type": 1
+    },
+    {
+      "itemID": 5,
+      "itemName": "Poor Man's Tin Ingot",
+      "itemDescription": "Refined tin, slag condensed away on low heat.",
+      "cost": "15",
+      "prefabPath": "Prefabs/TinIngot",
+      "type": 3
+    }
+  ]
+}
