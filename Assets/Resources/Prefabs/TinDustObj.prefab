@@ -9682,10 +9682,10 @@ GameObject:
   m_Component:
   - component: {fileID: 8254863895628459606}
   - component: {fileID: 8824341992075260222}
-  - component: {fileID: 6766176823037402892}
   - component: {fileID: 35050532280052725}
   - component: {fileID: 1367849862265811231}
   - component: {fileID: 4485948865198144647}
+  - component: {fileID: 5449945247162489698}
   m_Layer: 9
   m_Name: TinDustObj
   m_TagString: Untagged
@@ -9731,19 +9731,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1.0007286, z: 1}
   m_Center: {x: 0, y: 0.8137226, z: 0}
---- !u!114 &6766176823037402892
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6870166873045237092}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 94fcd6cd594c39b4da374a9ab2c9ecbf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Item
-  item: {fileID: 11400000, guid: 3f960367883d1b143a8395213db02e50, type: 2}
 --- !u!54 &35050532280052725
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -9797,6 +9784,34 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DustManager
   groundDustModel: {fileID: 6928787403524233532}
   airDustModel: {fileID: 9031972773097726808}
+--- !u!114 &5449945247162489698
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6870166873045237092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b83ad78a2162b6f498fabbd5074235a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Items
+  itemID: 0
+  itemName: 
+  itemDescription: 
+  cost: 
+  type: 0
+  currentPhase: 0
+  heatTimer: 0
+  condensed: 0
+  baseColor: {r: 0, g: 0, b: 0, a: 0}
+  itemData:
+    itemID: 0
+    itemName: 
+    itemDescription: 
+    cost: 
+    prefabPath: 
+    type: 0
 --- !u!1 &6928787403524233532
 GameObject:
   m_ObjectHideFlags: 0

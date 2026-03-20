@@ -230,4 +230,15 @@ public class Bloomery : MonoBehaviour
         bloomCharcoal2.SetActive(currentCharcoal >= 6);
         bloomCharcoal3.SetActive(currentCharcoal >= 16);
     }
+
+    public void CheatAddCharcoal(int amount)
+    {
+        for(int i = 0; i >= amount; i++)
+        {
+            currentCharcoal++;
+        }
+
+        UpdateCharcoalVisuals();
+        TryStartBlooming();
+    }
 }

@@ -27,7 +27,7 @@ public class InventorySpriteChanging : MonoBehaviour, IPointerEnterHandler, IPoi
             gameObject.GetComponent<Image>().sprite = highlighted;
         }
 
-        FindFirstObjectByType<Controls>().updateHighlighted(true, slot);
+        FindFirstObjectByType<Controls>().UpdateHighlighted(true, slot);
     }
     public void OnPointerExit(PointerEventData eventData)
     {
@@ -40,7 +40,7 @@ public class InventorySpriteChanging : MonoBehaviour, IPointerEnterHandler, IPoi
             gameObject.GetComponent<Image>().sprite = normal;
         }
 
-        FindFirstObjectByType<Controls>().updateHighlighted(false, slot);
+        FindFirstObjectByType<Controls>().UpdateHighlighted(false, slot);
     }
 
     public void SetIsFull(bool temp, int _slot)

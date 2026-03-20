@@ -26,10 +26,10 @@ public class LazerScriptFirst : MonoBehaviour
     private void Update()
     {
         DrawLazer();
-        if (Vector3.Distance(gameObject.transform.position, playerControls.GetPlayerPos()) < RangeofTip)
+        if (Vector3.Distance(gameObject.transform.position, playerControls.GetPlayerPosition()) < RangeofTip)
         {
             RaycastHit hit;
-            if (Physics.Raycast(gameObject.transform.position, (playerControls.GetPlayerPos() - transform.position), out hit, RangeofTip))
+            if (Physics.Raycast(gameObject.transform.position, (playerControls.GetPlayerPosition() - transform.position), out hit, RangeofTip))
             {
                 if (hit.collider.tag == "Player")
                 {

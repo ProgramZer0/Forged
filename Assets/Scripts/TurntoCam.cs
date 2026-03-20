@@ -9,7 +9,7 @@ public class TurntoCam : MonoBehaviour
 
     void Start()
     {
-        main = FindFirstObjectByType<Controls>().getMainCamera();
+        main = FindFirstObjectByType<Controls>().GetMainCamera();
     }
 
     // Update is called once per frame

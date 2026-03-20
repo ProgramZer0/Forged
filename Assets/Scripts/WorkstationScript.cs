@@ -103,10 +103,10 @@ public class WorkstationScript : MonoBehaviour
                 }
         }
 
-        if (Vector3.Distance(AnvilPos.transform.position, playerController.GetPlayerPos()) < rangeInteraction)
+        if (Vector3.Distance(AnvilPos.transform.position, playerController.GetPlayerPosition()) < rangeInteraction)
         {
             RaycastHit hit;
-            if (Physics.Raycast(AnvilPos.transform.position, (playerController.GetPlayerPos() - AnvilPos.transform.position), out hit, rangeInteraction))
+            if (Physics.Raycast(AnvilPos.transform.position, (playerController.GetPlayerPosition() - AnvilPos.transform.position), out hit, rangeInteraction))
             {
                 //Debug.Log("hit " + hit.collider.gameObject.name);
                 if (hit.collider.tag == "Player")
@@ -118,7 +118,7 @@ public class WorkstationScript : MonoBehaviour
 
                     if (Input.GetKeyDown(KeyCode.F))
                     {
-                        playerController.setLockedMovement(true);
+                        playerController.SetMovementLocked(true);
                         playerController.SetCutScenePlayerView();
                         inStation = true;
                         Hammer.SetActive(true);

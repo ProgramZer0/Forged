@@ -20,11 +20,11 @@ public class Harvests : MonoBehaviour
     }
     private void FixedUpdate()
     {
-        hotbarSelected = playerControls.getHotbarSelected();
-        if (Vector3.Distance(gameObject.transform.position, playerControls.GetPlayerPos()) < RangeofHarvest)
+        hotbarSelected = playerControls.GetHotbarSelected();
+        if (Vector3.Distance(gameObject.transform.position, playerControls.GetPlayerPosition()) < RangeofHarvest)
         {
             RaycastHit hit;
-            if (Physics.Raycast(gameObject.transform.position, (playerControls.GetPlayerPos() - transform.position), out hit, RangeofHarvest, TUtils.getTreeMask()))
+            if (Physics.Raycast(gameObject.transform.position, (playerControls.GetPlayerPosition() - transform.position), out hit, RangeofHarvest, TUtils.getTreeMask()))
             {
                 if (hit.collider.tag == "Player")
                 {

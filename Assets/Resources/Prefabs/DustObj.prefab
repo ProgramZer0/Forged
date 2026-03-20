@@ -223,7 +223,7 @@ ParticleSystem:
       serializedVersion: 2
       minMaxState: 0
       minColor: {r: 1, g: 1, b: 1, a: 1}
-      maxColor: {r: 1, g: 1, b: 1, a: 1}
+      maxColor: {r: 1, g: 1, b: 1, a: 0.02745098}
       maxGradient:
         serializedVersion: 2
         key0: {r: 1, g: 1, b: 1, a: 1}
@@ -14725,10 +14725,10 @@ GameObject:
   m_Component:
   - component: {fileID: 4526424699004561323}
   - component: {fileID: 840029244934141358}
-  - component: {fileID: 9214383076795114814}
   - component: {fileID: 7804600469610777252}
   - component: {fileID: 3739279676542321626}
   - component: {fileID: 8425518202732264057}
+  - component: {fileID: 1921707937524721692}
   m_Layer: 9
   m_Name: DustObj
   m_TagString: Untagged
@@ -14774,19 +14774,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1.0007286, z: 1}
   m_Center: {x: 0, y: 0.8137226, z: 0}
---- !u!114 &9214383076795114814
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6744443469203831295}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 94fcd6cd594c39b4da374a9ab2c9ecbf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Item
-  item: {fileID: 0}
 --- !u!54 &7804600469610777252
 Rigidbody:
   m_ObjectHideFlags: 0
@@ -14840,6 +14827,34 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DustManager
   groundDustModel: {fileID: 6177269377054827259}
   airDustModel: {fileID: 3827252890197411024}
+--- !u!114 &1921707937524721692
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6744443469203831295}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b83ad78a2162b6f498fabbd5074235a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Items
+  itemID: 0
+  itemName: 
+  itemDescription: 
+  cost: 
+  type: 0
+  currentPhase: 0
+  heatTimer: 0
+  condensed: 0
+  baseColor: {r: 0, g: 0, b: 0, a: 0}
+  itemData:
+    itemID: 0
+    itemName: 
+    itemDescription: 
+    cost: 
+    prefabPath: 
+    type: 0
 --- !u!1 &8027919754229080077
 GameObject:
   m_ObjectHideFlags: 0

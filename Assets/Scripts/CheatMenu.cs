@@ -1,0 +1,373 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using TMPro;
+using UnityEngine.UI;
+
+public class CheatMenu : MonoBehaviour
+{
+    [Header("References")]
+    public ItemDatabase itemDatabase;
+    public Bloomery bloom;
+    public Smeltery smelt;
+    public Controls playerController;
+    public CameraMovements CM;
+
+    [Header("UI")]
+    [SerializeField] private TMP_InputField inputField;
+    [SerializeField] private TextMeshProUGUI text;
+    [SerializeField] private ScrollRect scrollRect;
+    [SerializeField] private GameObject console;
+
+    [Header("Settings")]
+    [SerializeField] private int maxLines = 50;
+
+    private bool consoleUp = false;
+
+    // Terminal log
+    private List<string> logLines = new List<string>();
+
+    // Commands
+    private Dictionary<string, Action<string[]>> commands;
+    private List<string> commandList = new List<string>();
+
+    // History
+    private List<string> commandHistory = new List<string>();
+    private int historyIndex = -1;
+
+    // Autocomplete
+    private List<string> suggestions = new List<string>();
+    private int suggestionIndex = -1;
+
+    void Awake()
+    {
+        commands = new Dictionary<string, Action<string[]>>()
+        {
+            { "spawn", CmdSpawn },
+            { "teleport", CmdTeleport },
+            { "time", CmdTime },
+            { "player", CmdPlayer },
+            { "bloom", CmdBloom },
+            { "smeltery", CmdSmeltery }
+        };
+
+        commandList.AddRange(commands.Keys);
+    }
+
+    void Start()
+    {
+        console.SetActive(false);
+    }
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.F1))
+            ToggleConsole();
+
+        if (!consoleUp) return;
+
+        // Submit command
+        if (Input.GetKeyDown(KeyCode.Return))
+        {
+            string cmd = inputField.text;
+
+            if (!string.IsNullOrWhiteSpace(cmd))
+            {
+                commandHistory.Add(cmd);
+                historyIndex = commandHistory.Count;
+
+                HandleCommand(cmd);
+            }
+
+            inputField.text = "";
+            inputField.ActivateInputField();
+        }
+
+        // History 
+        if (Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            if (commandHistory.Count == 0) return;
+
+            historyIndex--;
+            if (historyIndex < 0) historyIndex = 0;
+
+            inputField.text = commandHistory[historyIndex];
+            MoveCursorToEnd();
+        }
+
+        // History 
+        if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            if (commandHistory.Count == 0) return;
+
+            historyIndex++;
+
+            if (historyIndex >= commandHistory.Count)
+            {
+                historyIndex = commandHistory.Count;
+                inputField.text = "";
+            }
+            else
+            {
+                inputField.text = commandHistory[historyIndex];
+            }
+
+            MoveCursorToEnd();
+        }
+
+        // Autocomplete
+        if (Input.GetKeyDown(KeyCode.Tab))
+        {
+            HandleAutocomplete();
+        }
+    }
+
+    // Console Control
+
+    private void ToggleConsole()
+    {
+        consoleUp = !consoleUp;
+        console.SetActive(consoleUp);
+
+        playerController.SetMovementLocked(consoleUp);
+
+        if (consoleUp)
+        {
+            inputField.text = "";
+            inputField.ActivateInputField();
+        }
+    }
+
+    // Command Handling
+
+    private void HandleCommand(string input)
+    {
+        Log(input);
+
+        var argsList = ParseArguments(input);
+        if (argsList.Count == 0) return;
+
+        string cmd = argsList[0].ToLower();
+
+        if (commands.TryGetValue(cmd, out var action))
+        {
+            action.Invoke(argsList.ToArray());
+        }
+        else
+        {
+            Log("<color=red>Unknown command</color>");
+        }
+    }
+
+    // Commands
+
+    private void CmdSpawn(string[] args)
+    {
+        if (args.Length < 3)
+        {
+            Log("Usage: spawn {itemID} {pos}");
+            return;
+        }
+
+        if (!int.TryParse(args[1], out int id))
+        {
+            Log("Invalid itemID");
+            return;
+        }
+
+        Vector3 pos = ParsePosition(args[2]);
+
+        var item = itemDatabase.GetItemDataById(id);
+        if (item == null)
+        {
+            Log("Item not found");
+            return;
+        }
+        
+        itemDatabase.SpawnItem(id, pos, Quaternion.identity);
+        Log($"Spawned {item.itemName}");
+    }
+
+    private void CmdTeleport(string[] args)
+    {
+        if (args.Length < 2) return;
+
+        Vector3 pos = ParsePosition(args[1]);
+        playerController.transform.position = pos;
+
+        Log($"Teleported to {pos}");
+    }
+
+    private void CmdTime(string[] args)
+    {
+        if (args.Length < 3) return;
+
+        switch (args[1].ToLower())
+        {
+            case "set":
+                if (float.TryParse(args[2], out float scale))
+                {
+                    Time.timeScale = scale;
+                    Log($"Time scale set to {scale}");
+                }
+                break;
+
+            case "pause":
+                bool pause = args[2] == "1";
+                Time.timeScale = pause ? 0f : 1f;
+                Log(pause ? "Paused" : "Resumed");
+                break;
+        }
+    }
+
+    private void CmdPlayer(string[] args)
+    {
+        if (args.Length < 4) return;
+
+        if (args[1].ToLower() != "set") return;
+
+        string param = args[2].ToLower();
+
+        if (!float.TryParse(args[3], out float value))
+        {
+            Log("Invalid value");
+            return;
+        }
+
+        switch (param)
+        {
+            case "walkSpeed": playerController.WalkSpeed = value; break;
+            case "sprintSpeed": playerController.SprintSpeed = value; break;
+            case "pickupRange": CM.pickupRange = value; break;
+            case "hp": playerController.health = value; break;
+            case "stamina": playerController.stamina = value; break;
+            default:
+                Log("Unknown player parameter");
+                return;
+        }
+
+        Log($"Set {param} to {value}");
+    }
+
+    private void CmdBloom(string[] args)
+    {
+        if (args.Length < 3) return;
+
+        if (args[1].ToLower() == "addheat")
+        {
+            float val = float.Parse(args[2]);
+            bloom.CheatAddCharcoal((int)val);
+            Log($"Bloom heat +{val}");
+        }
+    }
+
+    private void CmdSmeltery(string[] args)
+    {
+        if (args.Length < 3) return;
+
+        if (args[1].ToLower() == "addheat")
+        {
+            float val = float.Parse(args[2]);
+            smelt.AddCharcoal(val);
+            Log($"Smeltery heat +{val}");
+        }
+    }
+
+    // Parsing
+
+    private List<string> ParseArguments(string input)
+    {
+        List<string> args = new List<string>();
+        string current = "";
+        bool inQuotes = false;
+
+        foreach (char c in input)
+        {
+            if (c == '"')
+            {
+                inQuotes = !inQuotes;
+                continue;
+            }
+
+            if (c == ' ' && !inQuotes)
+            {
+                if (!string.IsNullOrEmpty(current))
+                {
+                    args.Add(current);
+                    current = "";
+                }
+            }
+            else
+            {
+                current += c;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(current))
+            args.Add(current);
+
+        return args;
+    }
+
+    private Vector3 ParsePosition(string input)
+    {
+        if (input.ToLower() == "atcamera")
+        {
+            return Camera.main.transform.position + Camera.main.transform.forward * 2f;
+        }
+
+        input = input.Replace("(", "").Replace(")", "");
+        string[] split = input.Split(',');
+
+        if (split.Length != 3) return Vector3.zero;
+
+        if (float.TryParse(split[0], out float x) &&
+            float.TryParse(split[1], out float y) &&
+            float.TryParse(split[2], out float z))
+        {
+            return new Vector3(x, y, z);
+        }
+
+        return Vector3.zero;
+    }
+
+    // Autocomplete
+
+    private void HandleAutocomplete()
+    {
+        string input = inputField.text.ToLower();
+
+        suggestions = commandList.FindAll(c => c.StartsWith(input));
+
+        if (suggestions.Count == 0) return;
+
+        suggestionIndex++;
+        if (suggestionIndex >= suggestions.Count)
+            suggestionIndex = 0;
+
+        inputField.text = suggestions[suggestionIndex];
+        MoveCursorToEnd();
+
+        Log($"<color=yellow>Suggestions: {string.Join(", ", suggestions)}</color>");
+    }
+
+    private void MoveCursorToEnd()
+    {
+        inputField.caretPosition = inputField.text.Length;
+    }
+
+    // Logging
+
+    private void Log(string message)
+    {
+        logLines.Add($"> {message}");
+
+        if (logLines.Count > maxLines)
+            logLines.RemoveAt(0);
+
+        text.text = string.Join("\n", logLines);
+
+        Canvas.ForceUpdateCanvases();
+        scrollRect.verticalNormalizedPosition = 0f;
+    }
+}

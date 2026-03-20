@@ -13,7 +13,7 @@ public class CameraMovements : MonoBehaviour
     [SerializeField] private LayerMask itemPickupLayer;
     [SerializeField] private GameObject pickUpTarget;
     [SerializeField] private GameObject pickupPrompt;
-    [SerializeField] private float pickupRange = 7f;
+    [SerializeField] public float pickupRange = 7f;
     [SerializeField] private float pickupSpeed = 100f;
     [SerializeField] private float dropGracePeriod = 3f;
     [SerializeField] private Toggle holdToPickup;
@@ -52,7 +52,7 @@ public class CameraMovements : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (playerControls.getHotbarSelected() != 0) return;
+        if (playerControls.GetHotbarSelected() != 0) return;
 
         HandleRaycast();
         HandleHeldObject();
@@ -64,6 +64,8 @@ public class CameraMovements : MonoBehaviour
         yRotation += Input.GetAxisRaw("Mouse X") * sensitivity;
         xRotation -= Input.GetAxisRaw("Mouse Y") * sensitivity;
         xRotation = Mathf.Clamp(xRotation, -90f, 90f);
+        
+        //Debug.Log("xrot: " + xRotation + ", yrot: " + yRotation);
 
         transform.rotation = Quaternion.Euler(xRotation, yRotation, 0);
     }
