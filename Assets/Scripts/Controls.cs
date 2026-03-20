@@ -60,6 +60,8 @@ public class Controls : MonoBehaviour
 
     private void FixedUpdate()
     {
+        HandleEscWhileInStation();
+
         if (MovementLocked)
         {
             ClearMovementAnimations();
@@ -70,19 +72,21 @@ public class Controls : MonoBehaviour
         HandleMovement();
         HandleJump();
         HandleAttack();
-        HandleEscWhileInStation();
     }
 
 
     private void GatherInput()
     {
+        if (Input.GetKeyDown(KeyCode.Escape)) escPressed = true;
+
+        if (MovementLocked) return;
+
         horizontalInput = Input.GetAxis("Horizontal");
         verticalInput = Input.GetAxis("Vertical");
 
         sprintHeld = Input.GetKey(KeyCode.LeftShift);
 
         if (Input.GetKeyDown(KeyCode.Space)) jumpPressed = true;
-        if (Input.GetKeyDown(KeyCode.Escape)) escPressed = true;
 
         attackHeld = Input.GetMouseButton(0);
 
@@ -192,6 +196,13 @@ public class Controls : MonoBehaviour
             SetMovementLocked(false);
             SetMainPlayerView();
             station.DisableUI();
+            escPressed = false;
+        }
+
+        var cheatMenu = FindFirstObjectByType<CheatMenu>();
+        if (cheatMenu != null && cheatMenu.IsConsoleUp())
+        {
+            cheatMenu.ToggleConsole();
             escPressed = false;
         }
     }

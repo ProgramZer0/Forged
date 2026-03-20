@@ -1,0 +1,28 @@
+{
+  "items": [
+    {
+      "itemID": 5100,
+      "itemName": "a Key?",
+      "itemDescription": "Earth key 1",
+      "cost": "0",
+      "prefabPath": "Prefabs/EarthKey1",
+      "type": 7
+    },
+    {
+      "itemID": 5101,
+      "itemName": "strange key?",
+      "itemDescription": "Earth key 2",
+      "cost": "0",
+      "prefabPath": "Prefabs/EarthKey2",
+      "type": 7
+    },
+    {
+      "itemID": 5102,
+      "itemName": "Key?",
+      "itemDescription": "Earth key 3",
+      "cost": "0",
+      "prefabPath": "Prefabs/EarthKey3",
+      "type": 7
+    }
+  ]
+}

@@ -14,7 +14,8 @@ public enum Itemtype
     Default,   // 7
     Ore,       // 8
     Watered,   // 9
-    Crystal    // 10
+    Crystal,    // 10
+    Wood        // 11
 }
 
 public enum MetalType

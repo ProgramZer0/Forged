@@ -1,0 +1,76 @@
+{
+  "items": [
+    {
+      "itemID": 105,
+      "itemName": "Oak Wood Log",
+      "itemDescription": "Log of oak.",
+      "cost": "18",
+      "prefabPath": "Prefabs/OakLog",
+      "type": 11
+    },
+    {
+      "itemID": 106,
+      "itemName": "Birch Wood Log",
+      "itemDescription": "Log of birch.",
+      "cost": "18",
+      "prefabPath": "Prefabs/BirchLog",
+      "type": 11
+    },
+    {
+      "itemID": 107,
+      "itemName": "Pine Wood Log",
+      "itemDescription": "Log of pine.",
+      "cost": "18",
+      "prefabPath": "Prefabs/PineLog",
+      "type": 11
+    },
+    {
+      "itemID": 108,
+      "itemName": "Hickory Wood Log",
+      "itemDescription": "Log of hickory.",
+      "cost": "20",
+      "prefabPath": "Prefabs/HickoryLog",
+      "type": 11
+    },
+    {
+      "itemID": 109,
+      "itemName": "Maple Wood Log",
+      "itemDescription": "Log of maple.",
+      "cost": "20",
+      "prefabPath": "Prefabs/MapleLog",
+      "type": 11
+    },
+    {
+      "itemID": 110,
+      "itemName": "Ash Wood Log",
+      "itemDescription": "Log of ash.",
+      "cost": "20",
+      "prefabPath": "Prefabs/AshLog",
+      "type": 11
+    },
+    {
+      "itemID": 111,
+      "itemName": "Mahogany Wood Log",
+      "itemDescription": "Log of mahogany.",
+      "cost": "24",
+      "prefabPath": "Prefabs/MahoganyLog",
+      "type": 11
+    },
+    {
+      "itemID": 112,
+      "itemName": "Ebony Wood Log",
+      "itemDescription": "Log of ebony.",
+      "cost": "26",
+      "prefabPath": "Prefabs/EbonyLog",
+      "type": 11
+    },
+    {
+      "itemID": 113,
+      "itemName": "Teak Wood Log",
+      "itemDescription": "Log of teak.",
+      "cost": "24",
+      "prefabPath": "Prefabs/TeakLog",
+      "type": 11
+    }
+  ]
+}

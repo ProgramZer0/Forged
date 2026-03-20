@@ -1,0 +1,28 @@
+{
+  "items": [
+    {
+      "itemID": 100,
+      "itemName": "Large Chunk of Charcoal",
+      "itemDescription": "A Large chunk of Charocoal, good source of carbon.",
+      "cost": "18",
+      "prefabPath": "Prefabs/Charcoal",
+      "type": 8
+    },
+    {
+      "itemID": 101,
+      "itemName": "Charcoal Chunks",
+      "itemDescription": "Chunks of Charocoal.",
+      "cost": "36",
+      "prefabPath": "none",
+      "type": 2
+    },
+    {
+      "itemID": 102,
+      "itemName": "Charcoal Dust",
+      "itemDescription": "Finely ground Charcoal dust.",
+      "cost": "30",
+      "prefabPath": "Prefabs/CharcoalDust",
+      "type": 0
+    }
+  ]
+}

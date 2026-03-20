@@ -1,0 +1,16 @@
+{
+  "Recipes": [
+    {
+      "inputItemIDs": [ 100 ],
+      "phaseNeeded": 5,
+      "requiredValue": 1.0,
+      "outputItemID": 101
+    },
+    {
+      "inputItemIDs": [ 101 ],
+      "phaseNeeded": 5,
+      "requiredValue": 1.0,
+      "outputItemID": 102
+    }
+  ]
+}

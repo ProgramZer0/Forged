@@ -45,6 +45,7 @@ public class Gui : MonoBehaviour
     [SerializeField] private Text infoStatText;
 
     [SerializeField] private Controls controls;
+    [SerializeField] private WorkstationScript WS;
     private bool menuIsUp;
     public CursorState currentState = CursorState.defaultCursor;
 

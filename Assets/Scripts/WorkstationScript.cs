@@ -56,7 +56,7 @@ public class WorkstationScript : MonoBehaviour
     private TextMesh display;
     private bool LMBPressed = false;
     private bool usingTongs = false;
-    private bool inStation = false;
+    public bool inStation = false;
     private bool isClicking = false;
     private Items itemOnAnvil;
     private Items itemOnTongs;
@@ -240,6 +240,7 @@ public class WorkstationScript : MonoBehaviour
         mainVCam.SetActive(false);
         anvilVCam.SetActive(false);
         SmeltVCam.SetActive(false);
+        playerController.SetMovementLocked(false);
         inStation = false;
     }
     private void UsingTongs()

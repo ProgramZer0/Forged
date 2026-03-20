@@ -58824,6 +58824,7 @@ MonoBehaviour:
   rangeInteraction: 5
   GUI: {fileID: 1243795813}
   currentSmithingMode: 0
+  inStation: 0
 --- !u!1001 &752619227
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -82631,6 +82632,7 @@ MonoBehaviour:
   hpAndStatsUI: {fileID: 124470115}
   infoStatText: {fileID: 1771673543}
   controls: {fileID: 22095980}
+  WS: {fileID: 751058504}
   currentState: 0
 --- !u!4 &1246414339 stripped
 Transform:

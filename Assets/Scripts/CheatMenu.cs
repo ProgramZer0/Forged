@@ -39,6 +39,9 @@ public class CheatMenu : MonoBehaviour
     private List<string> suggestions = new List<string>();
     private int suggestionIndex = -1;
 
+    //Help Dic
+    private Dictionary<string, string> commandDescriptions = new Dictionary<string, string>();
+
     void Awake()
     {
         commands = new Dictionary<string, Action<string[]>>()
@@ -48,10 +51,22 @@ public class CheatMenu : MonoBehaviour
             { "time", CmdTime },
             { "player", CmdPlayer },
             { "bloom", CmdBloom },
-            { "smeltery", CmdSmeltery }
+            { "smeltery", CmdSmeltery },
+            { "help", CmdHelp }
         };
 
         commandList.AddRange(commands.Keys);
+
+        commandDescriptions = new Dictionary<string, string>()
+        {
+            { "spawn", "spawn {itemID} {pos(x,y,z) or player}" },
+            { "teleport", "teleport {pos(x,y,z) or player}" },
+            { "time", "time {set value | pause 0/1}" },
+            { "player", "player set {walkSpeed, sprintSpeed, pickupRange, hp, stamina} value" },
+            { "bloom", "bloom addHeat value" },
+            { "smeltery", "smeltery addHeat value" },
+            { "help", "help (lists all commands)" }
+        };
     }
 
     void Start()
@@ -124,7 +139,7 @@ public class CheatMenu : MonoBehaviour
 
     // Console Control
 
-    private void ToggleConsole()
+    public void ToggleConsole()
     {
         consoleUp = !consoleUp;
         console.SetActive(consoleUp);
@@ -272,6 +287,31 @@ public class CheatMenu : MonoBehaviour
             Log($"Smeltery heat +{val}");
         }
     }
+    private void CmdHelp(string[] args)
+    {
+        if (args.Length > 1)
+        {
+            string cmd = args[1].ToLower();
+
+            if (commandDescriptions.TryGetValue(cmd, out string desc))
+            {
+                Log($"<color=yellow>{cmd}</color> - {desc}");
+            }
+            else
+            {
+                Log("<color=red>Command not found</color>");
+            }
+
+            return;
+        }
+
+        Log("<color=cyan>=== Commands ===</color>");
+
+        foreach (var cmd in commandDescriptions)
+        {
+            Log($"<color=yellow>{cmd.Key}</color> - {cmd.Value}");
+        }
+    }
 
     // Parsing
 
@@ -311,9 +351,9 @@ public class CheatMenu : MonoBehaviour
 
     private Vector3 ParsePosition(string input)
     {
-        if (input.ToLower() == "atcamera")
+        if (input.ToLower() == "player")
         {
-            return Camera.main.transform.position + Camera.main.transform.forward * 2f;
+            return Camera.main.transform.position + Camera.main.transform.forward * 3f;
         }
 
         input = input.Replace("(", "").Replace(")", "");
@@ -370,4 +410,8 @@ public class CheatMenu : MonoBehaviour
         Canvas.ForceUpdateCanvases();
         scrollRect.verticalNormalizedPosition = 0f;
     }
+
+
+    public bool IsConsoleUp() { return consoleUp; }
+
 }
