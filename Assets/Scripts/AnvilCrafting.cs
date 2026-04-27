@@ -327,7 +327,6 @@ public class AnvilCrafting : MonoBehaviour
 
         Vector3[] vertices = mesh.vertices;
 
-        // Lerp t is driven by progress � mesh reaches target exactly when condensing completes
         // Lerp t is driven by progress mesh reaches target exactly when condensing completes
         float progress = Mathf.Clamp01(itemScriptOnAnvil.condensed / condensingRecipe.requiredValue);
 
