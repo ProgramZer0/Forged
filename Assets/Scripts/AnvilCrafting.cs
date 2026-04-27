@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+
 public enum AnvilHitType
 {
     WarpInward,
@@ -11,10 +12,10 @@ public enum AnvilHitType
     Main,
     Edge
 }
+
 public class AnvilCrafting : MonoBehaviour
 {
     [SerializeField] private GameObject AnvilPos;
-    //[SerializeField] private LayerMask itemMask;
     [SerializeField] private Slider Force;
     [SerializeField] private float perHitHeat = 0.5f;
     [SerializeField] private AnvilManager anvilMgr;
@@ -29,18 +30,17 @@ public class AnvilCrafting : MonoBehaviour
     private Mesh workingMesh;
     private float originalHeight;
 
-    //private GameObject currentObj;
     private SmithingMode currentSmithingMode = SmithingMode.Normal;
-
 
     private void CacheTargetMesh(GameObject targetPrefab)
     {
         MeshFilter mf = targetPrefab.GetComponentInChildren<MeshFilter>();
         targetMesh = mf.sharedMesh;
-
         targetVertices = targetMesh.vertices;
     }
+
     public void ChangeSmithingMode(SmithingMode mode) { currentSmithingMode = mode; }
+
     public bool HandleShapingEditor(RaycastHit hit)
     {
         if (hit.transform != null)
@@ -67,10 +67,9 @@ public class AnvilCrafting : MonoBehaviour
 
         return false;
     }
-    
+
     private AnvilHitType DetermineHitType(RaycastHit hit)
     {
-        //Vector3 localPoint = AnvilPos.transform.InverseTransformPoint(hit.point);
         Vector3 localPoint = transform.InverseTransformPoint(hit.point);
 
         if (localPoint.x > 0.4f)
@@ -105,11 +104,8 @@ public class AnvilCrafting : MonoBehaviour
         Mesh mesh = mf.mesh;
 
         Vector3[] vertices = mesh.vertices;
-
         // Convert hit point to LOCAL SPACE
-
         Vector3 localHitPoint = hit.transform.InverseTransformPoint(worldPoint);
-
         float radius = hitSurface;
 
         for (int i = 0; i < vertices.Length; i++)
@@ -119,12 +115,9 @@ public class AnvilCrafting : MonoBehaviour
             if (distance < radius)
             {
                 float falloff = 1f - (distance / radius);
-
                 Vector3 localDirection = hit.transform.InverseTransformDirection(direction);
-
                 vertices[i] += localDirection * force * falloff;
 
-                // Optional behavior per hit type
                 if (hitType == AnvilHitType.Edge)
                     vertices[i] += Vector3.right * force * 0.2f * falloff;
 
@@ -137,15 +130,14 @@ public class AnvilCrafting : MonoBehaviour
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
     }
+
     public bool HandleCrafting(RaycastHit hit)
     {
-
         if (hit.collider != null)
         {
             Debug.Log("hit item " + hit.collider.gameObject.name);
-            Debug.Log("obj is the obj on anvil:  " + hit.collider.gameObject.name);
 
-            if (itemScriptOnAnvil == null )
+            if (itemScriptOnAnvil == null)
             {
                 Debug.Log("hit is: " + hit.transform.gameObject);
                 if (!TryToGrabItem(hit))
@@ -159,23 +151,13 @@ public class AnvilCrafting : MonoBehaviour
 
             if (anvilRecipe != null)
             {
-                Debug.Log("anvil recipe exsist ID: Input Item: " + anvilRecipe.inputItemIDs[0] +
-                    ", requiredValue: " + anvilRecipe.requiredValue + ", output Item: " + anvilRecipe.outputItemID);
-
+                Debug.Log("anvil recipe exists");
                 ItemData newItem = itemDatabase.GetItemDataById(anvilRecipe.outputItemID);
-                Debug.Log("Item: " + newItem.itemName);
-
                 if (newItem != null)
-                {
                     ModelChange(newItem, hit);
-
-                }
             }
             else if (shapingRecipe != null)
             {
-                Debug.Log("shaping recipe exsist ID: Input Item: " + shapingRecipe.inputItemIDs[0] +
-                    ", requiredValue: " + shapingRecipe.requiredValue + ", output Item: " + shapingRecipe.outputItemID);
-
                 return HandleShapingEditor(shapingRecipe, hit);
             }
             else
@@ -185,9 +167,6 @@ public class AnvilCrafting : MonoBehaviour
                 {
                     if (condensingRecipe != null)
                     {
-                        Debug.Log("condensing recipe exsist ID: Input Item: " + condensingRecipe.inputItemIDs[0] +
-                    ", requiredValue: " + condensingRecipe.requiredValue + ", output Item: " + condensingRecipe.outputItemID);
-
                         Recipe heatingRecipe = recipeManager.FindRecipe(PhaseType.Heating, itemScriptOnAnvil.itemID);
                         if (heatingRecipe != null)
                         {
@@ -210,7 +189,6 @@ public class AnvilCrafting : MonoBehaviour
         return false;
     }
 
-
     public Items GetItemScriptFromHit(RaycastHit hit)
     {
         Items itemScript = hit.transform.gameObject.GetComponent<Items>();
@@ -230,6 +208,7 @@ public class AnvilCrafting : MonoBehaviour
         }
         return null;
     }
+
     private bool TryToGrabItem(RaycastHit hit)
     {
         Items item = hit.transform.GetComponent<Items>();
@@ -248,7 +227,6 @@ public class AnvilCrafting : MonoBehaviour
         {
             workingMesh = Instantiate(mf.mesh);
             mf.mesh = workingMesh;
-
             originalHeight = workingMesh.bounds.size.y;
         }
 
@@ -263,80 +241,103 @@ public class AnvilCrafting : MonoBehaviour
             return;
 
         float baseStep = Force.value * 0.01f;
-
         float efficiency = Mathf.Lerp(1f, 0.2f, itemScriptOnAnvil.condensed);
         float step = baseStep * efficiency;
-
         float remaining = target - itemScriptOnAnvil.condensed;
         float appliedStep = Mathf.Min(step, remaining);
 
         itemScriptOnAnvil.condensed += appliedStep;
 
         if (currentSmithingMode == SmithingMode.Normal)
-            ApplyNormalCondense(hit);
+            ApplyNormalCondense(hit, condensingRecipe);
         else
             ApplyExpertCondense(hit);
 
         if (itemScriptOnAnvil.condensed >= target)
+        {
             ModelChange(itemTo, hit);
+        }
         else
+        {
             itemScriptOnAnvil.heatTimer -= perHitHeat;
+        }
     }
 
-    private void ApplyExpertCondense(RaycastHit hit)
+    /// <summary>
+    /// Generates target bar vertices whose total volume equals
+    /// originalVolume * volumeRatio (e.g. 0.7 = 70% of original).
+    /// Shape is a flat elongated ingot. Called only once per item
+    /// and cached on a CondensingData component.
+    /// </summary>
+    private Vector3[] GenerateBarTargetVertices(Mesh mesh, float volumeRatio)
     {
-        MeshFilter mf = hit.transform.GetComponent<MeshFilter>();
+        Bounds b = mesh.bounds;
+        float originalVolume = b.size.x * b.size.y * b.size.z;
+        float targetVolume = originalVolume * volumeRatio;
+
+        // Bar proportions: flat (short Y), moderate width (X), elongated (Z)
+        float barY = Mathf.Pow(targetVolume, 1f / 3f) * 0.35f;
+        float barX = Mathf.Pow(targetVolume, 1f / 3f) * 0.8f;
+        float barZ = targetVolume / (barY * barX);
+
+        Vector3 center = b.center;
+        Vector3 half = new Vector3(barX * 0.5f, barY * 0.5f, barZ * 0.5f);
+
+        Vector3[] meshVerts = mesh.vertices;
+        Vector3[] targets = new Vector3[meshVerts.Length];
+
+        for (int i = 0; i < meshVerts.Length; i++)
+        {
+            Vector3 dir = meshVerts[i] - center;
+
+            float tx = Mathf.Clamp(dir.x / (b.extents.x + 0.0001f), -1f, 1f);
+            float ty = Mathf.Clamp(dir.y / (b.extents.y + 0.0001f), -1f, 1f);
+            float tz = Mathf.Clamp(dir.z / (b.extents.z + 0.0001f), -1f, 1f);
+
+            targets[i] = center + new Vector3(tx * half.x, ty * half.y, tz * half.z);
+        }
+
+        return targets;
+    }
+
+    private void ApplyNormalCondense(RaycastHit hit, Recipe condensingRecipe)
+    {
+        MeshFilter mf = hit.collider.transform.GetComponentInChildren<MeshFilter>();
+        if (mf == null) return;
+
         Mesh mesh = mf.mesh;
+        GameObject itemObj = itemScriptOnAnvil.gameObject;
+
+        // Use cached CondensingData if it exists, otherwise generate and attach it now
+        CondensingData condensingData = itemObj.GetComponent<CondensingData>();
+        if (condensingData == null)
+        {
+            condensingData = itemObj.AddComponent<CondensingData>();
+            condensingData.targetVertices = GenerateBarTargetVertices(mesh, condensingRecipe.requiredValue);
+            Debug.Log("Generated and cached condensing target bar mesh.");
+        }
+
+        Vector3[] condensingTargetVertices = condensingData.targetVertices;
+
+        if (condensingTargetVertices.Length != mesh.vertices.Length)
+        {
+            Debug.LogWarning("Vertex count mismatch between mesh and condensing target.");
+            return;
+        }
 
         Vector3[] vertices = mesh.vertices;
 
-        Vector3 localHit = hit.transform.InverseTransformPoint(hit.point);
-        Vector3 localDirection = hit.transform.InverseTransformDirection(Vector3.down);
-
-        float radius = 0.5f;
-        float force = Force.value;
-
-        float maxHeight = Mathf.Lerp(originalHeight, originalHeight * 0.5f, itemScriptOnAnvil.condensed);
-
-        float currentHeight = mesh.bounds.size.y;
-        float allowedCompression = currentHeight - maxHeight;
+        // Lerp t is driven by progress � mesh reaches target exactly when condensing completes
+        float progress = Mathf.Clamp01(itemScriptOnAnvil.condensed / condensingRecipe.requiredValue);
 
         for (int i = 0; i < vertices.Length; i++)
         {
-            float distance = Vector3.Distance(vertices[i], localHit);
-
-            if (distance < radius)
-            {
-                float falloff = 1f - (distance / radius);
-
-                Vector3 move = localDirection * force * 0.01f * falloff;
-
-                if (allowedCompression > 0)
-                    vertices[i] += move;
-            }
+            vertices[i] = Vector3.Lerp(vertices[i], condensingTargetVertices[i], progress);
         }
 
         mesh.vertices = vertices;
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
-    }
-
-    private void ApplyNormalCondense(RaycastHit hit)
-    {
-        Transform obj = hit.collider.transform;
-
-        float progress = itemScriptOnAnvil.condensed;
-
-        // compress vertically
-        float height = Mathf.Lerp(1f, 0.5f, progress);
-
-        // spread lengthwise
-        float length = Mathf.Lerp(1f, 1.8f, progress);
-
-        // slightly tighten width
-        float width = Mathf.Lerp(1f, 0.8f, progress);
-
-        obj.localScale = new Vector3(width, height, length);
 
         ApplyNormalMaterial(hit.collider.gameObject, progress);
     }
@@ -358,6 +359,41 @@ public class AnvilCrafting : MonoBehaviour
 
         if (r.material.HasProperty("_Smoothness"))
             r.material.SetFloat("_Smoothness", Mathf.Lerp(0.1f, 0.6f, progress));
+    }
+
+    private void ApplyExpertCondense(RaycastHit hit)
+    {
+        MeshFilter mf = hit.transform.GetComponent<MeshFilter>();
+        Mesh mesh = mf.mesh;
+
+        Vector3[] vertices = mesh.vertices;
+        Vector3 localHit = hit.transform.InverseTransformPoint(hit.point);
+        Vector3 localDirection = hit.transform.InverseTransformDirection(Vector3.down);
+
+        float radius = 0.5f;
+        float force = Force.value;
+
+        float maxHeight = Mathf.Lerp(originalHeight, originalHeight * 0.5f, itemScriptOnAnvil.condensed);
+        float currentHeight = mesh.bounds.size.y;
+        float allowedCompression = currentHeight - maxHeight;
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            float distance = Vector3.Distance(vertices[i], localHit);
+
+            if (distance < radius)
+            {
+                float falloff = 1f - (distance / radius);
+                Vector3 move = localDirection * force * 0.01f * falloff;
+
+                if (allowedCompression > 0)
+                    vertices[i] += move;
+            }
+        }
+
+        mesh.vertices = vertices;
+        mesh.RecalculateNormals();
+        mesh.RecalculateBounds();
     }
 
     private void ModelChange(ItemData changeTo, RaycastHit hit)
@@ -385,10 +421,8 @@ public class AnvilCrafting : MonoBehaviour
             }
         }
 
-
         if (obj != null)
         {
-
             Debug.Log("Changing Models: change to " + changeTo.itemName);
             Debug.Log("from " + changeFromItem.itemName);
 
@@ -405,18 +439,15 @@ public class AnvilCrafting : MonoBehaviour
                     }
                     break;
                 case Itemtype.Dust:
-
                     Destroy(obj);
                     Vector3 spawnPos = hit.transform.position;
                     GameObject o = itemDatabase.SpawnItem(changeTo.itemID, spawnPos, Quaternion.Euler(0, 0, 0));
-
-                    //currentObj = o;
                     obj = o;
                     break;
                 case Itemtype.Metal:
                     if (changeFromItem.type == Itemtype.Dust)
                     {
-                        //compress dust to metal
+                        // compress dust to metal
                     }
                     if (changeFromItem.type == Itemtype.Bloom)
                     {
@@ -424,7 +455,7 @@ public class AnvilCrafting : MonoBehaviour
                     }
                     if (changeFromItem.type == Itemtype.Ore)
                     {
-                        //shape for moab stuff
+                        // shape for moab stuff
                     }
                     break;
             }
