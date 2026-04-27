@@ -16,11 +16,13 @@ public class AnvilCrafting : MonoBehaviour
     [SerializeField] private GameObject AnvilPos;
     //[SerializeField] private LayerMask itemMask;
     [SerializeField] private Slider Force;
-    [SerializeField] private float perHitHeat = 2f;
+    [SerializeField] private float perHitHeat = 0.5f;
     [SerializeField] private AnvilManager anvilMgr;
     [SerializeField] private CraftingRecipeManager recipeManager;
     [SerializeField] private ItemDatabase itemDatabase;
 
+    private Vector3[] targetVertices;
+    private Mesh targetMesh;
     private float hitForce = 0.03f;
     private float hitSurface = 0.2f;
     private Items itemScriptOnAnvil;
@@ -30,6 +32,14 @@ public class AnvilCrafting : MonoBehaviour
     //private GameObject currentObj;
     private SmithingMode currentSmithingMode = SmithingMode.Normal;
 
+
+    private void CacheTargetMesh(GameObject targetPrefab)
+    {
+        MeshFilter mf = targetPrefab.GetComponentInChildren<MeshFilter>();
+        targetMesh = mf.sharedMesh;
+
+        targetVertices = targetMesh.vertices;
+    }
     public void ChangeSmithingMode(SmithingMode mode) { currentSmithingMode = mode; }
     public bool HandleShapingEditor(RaycastHit hit)
     {
