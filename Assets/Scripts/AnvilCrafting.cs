@@ -21,6 +21,7 @@ public class AnvilCrafting : MonoBehaviour
     [SerializeField] private AnvilManager anvilMgr;
     [SerializeField] private CraftingRecipeManager recipeManager;
     [SerializeField] private ItemDatabase itemDatabase;
+    [SerializeField] private Collider anvilCollider;
 
     private Vector3[] targetVertices;
     private Mesh targetMesh;
@@ -43,29 +44,40 @@ public class AnvilCrafting : MonoBehaviour
 
     public bool HandleShapingEditor(RaycastHit hit)
     {
-        if (hit.transform != null)
-        {
-            if (itemScriptOnAnvil == null)
-                if (!TryToGrabItem(hit))
-                    return false;
+        if (hit.transform == null) return false;
 
-            Recipe shapingRecipe = recipeManager.FindRecipe(PhaseType.Shaping, itemScriptOnAnvil.itemID);
+        if (itemScriptOnAnvil == null)
+            if (!TryToGrabItem(hit))
+                return false;
 
-            if (shapingRecipe != null)
-            {
-                float tempNeeded = shapingRecipe.requiredValue * 20;
+        Recipe shapingRecipe = recipeManager.FindRecipe(PhaseType.Shaping, itemScriptOnAnvil.itemID);
 
-                if (itemScriptOnAnvil.heatTimer >= tempNeeded)
-                {
-                    Vector3 direction = anvilMgr.GetHitDirection(hit);
-                    AnvilHitType hitType = DetermineHitType(hit);
-                    EditMesh(direction, hit.point, Force.value * hitForce, hitType, hit);
-                    return true;
-                }
-            }
-        }
+        if (shapingRecipe == null) return false;
 
-        return false;
+        float tempNeeded = shapingRecipe.requiredValue * 20;
+        if (itemScriptOnAnvil.heatTimer < tempNeeded) return false;
+
+        // Add ShapeManager if not already present
+        ShapeManager sm = itemScriptOnAnvil.GetComponent<ShapeManager>();
+        if (sm == null)
+            sm = itemScriptOnAnvil.gameObject.AddComponent<ShapeManager>();
+
+        sm.anvilCollider = anvilCollider;
+
+        AnvilHitType hitType = DetermineHitType(hit);
+
+        sm.OnHammerHit(
+            hit,
+            Force.value,
+            anvilMgr.GetCurrentAnvilMode(),
+            currentSmithingMode,
+            true,
+            hitType,
+            anvilMgr.GetHammerRight(),
+            anvilCollider
+        );
+
+        return true;
     }
 
     private AnvilHitType DetermineHitType(RaycastHit hit)

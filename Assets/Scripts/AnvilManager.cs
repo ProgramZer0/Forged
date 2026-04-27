@@ -510,5 +510,9 @@ public class AnvilManager : MonoBehaviour
                 break;
         }
     }
+
+    public Vector3 GetHammerRight() { return hammerOBJ.transform.right; }
+
+    public AnvilMode GetCurrentAnvilMode() { return currentAnvilMode; }
     #endregion
 }
