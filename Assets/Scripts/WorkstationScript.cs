@@ -41,6 +41,7 @@ public class WorkstationScript : MonoBehaviour
     [SerializeField] private GameObject Tongs;
     [SerializeField] private GameObject TongPlacement;
 
+    [SerializeField] private CraftingRecipeManager recipeManager;
     [SerializeField] private Controls playerController;
     [SerializeField] private Smeltery smelteryScript;
     [SerializeField] private AnvilPlaces anvilPlace;
@@ -252,6 +253,7 @@ public class WorkstationScript : MonoBehaviour
     {
         Debug.Log("take off tongs");
         Tongs.GetComponent<Animator>().SetBool("TongGrab", true);
+        objOnTongs.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.None;
         objOnTongs.GetComponent<Rigidbody>().useGravity = true;
         objOnTongs.GetComponent<Collider>().enabled = true;
         objOnTongs.transform.position = hit.point + new Vector3(0, 0, 0.1f);
@@ -303,7 +305,27 @@ public class WorkstationScript : MonoBehaviour
         obj.GetComponent<Collider>().enabled = false;
         obj.transform.SetParent(TongPlacement.transform);
         obj.transform.position = TongPlacement.transform.position;
+
+        // In Normal mode, snap Y up if this item has a condensing recipe
+        if (currentSmithingMode == SmithingMode.Normal)
+        {
+            Items itemScript = obj.GetComponent<Items>();
+            if (itemScript != null)
+            {
+                Recipe condensingRecipe = recipeManager.FindRecipe(PhaseType.Condensing, itemScript.itemID);
+                if (condensingRecipe != null)
+                {
+                    Vector3 currentForward = obj.transform.forward;
+                    currentForward.y = 0f;
+                    if (currentForward.sqrMagnitude < 0.001f)
+                        currentForward = Vector3.forward;
+                    obj.transform.rotation = Quaternion.LookRotation(currentForward.normalized, Vector3.up);
+
+                }
+            }
+        }
         objOnTongs = obj;
+        obj.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeRotation;
 
         itemOnTongs = itemOnAnvil;
         itemOnAnvil = null;

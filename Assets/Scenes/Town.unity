@@ -58816,6 +58816,7 @@ MonoBehaviour:
   Hammer: {fileID: 6694017316723735068}
   Tongs: {fileID: 6104659136301275217}
   TongPlacement: {fileID: 286908174}
+  recipeManager: {fileID: 439208263}
   playerController: {fileID: 22095980}
   smelteryScript: {fileID: 919132148961809699}
   anvilPlace: {fileID: 914790401}

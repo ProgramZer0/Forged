@@ -255,6 +255,24 @@ public class AnvilCrafting : MonoBehaviour
 
         if (itemScriptOnAnvil.condensed >= target)
         {
+            // Hard snap to target on final hit to eliminate any remaining vertex drift
+            MeshFilter mf = hit.collider.transform.GetComponentInChildren<MeshFilter>();
+            if (mf != null)
+            {
+                CondensingData condensingData = itemScriptOnAnvil.gameObject.GetComponent<CondensingData>();
+                if (condensingData != null)
+                {
+                    Mesh mesh = mf.mesh;
+                    mesh.vertices = condensingData.targetVertices;
+                    mesh.RecalculateNormals();
+                    mesh.RecalculateBounds();
+
+                    MeshCollider mc = hit.collider.transform.GetComponentInChildren<MeshCollider>();
+                    if (mc != null)
+                        mc.sharedMesh = mesh;
+                }
+            }
+
             ModelChange(itemTo, hit);
         }
         else
@@ -275,9 +293,8 @@ public class AnvilCrafting : MonoBehaviour
         float originalVolume = b.size.x * b.size.y * b.size.z;
         float targetVolume = originalVolume * volumeRatio;
 
-        // Bar proportions: flat (short Y), moderate width (X), elongated (Z)
         float barY = Mathf.Pow(targetVolume, 1f / 3f) * 0.35f;
-        float barX = Mathf.Pow(targetVolume, 1f / 3f) * 0.8f;
+        float barX = Mathf.Pow(targetVolume, 1f / 3f) * 0.7f;
         float barZ = targetVolume / (barY * barX);
 
         Vector3 center = b.center;
@@ -290,14 +307,110 @@ public class AnvilCrafting : MonoBehaviour
         {
             Vector3 dir = meshVerts[i] - center;
 
-            float tx = Mathf.Clamp(dir.x / (b.extents.x + 0.0001f), -1f, 1f);
-            float ty = Mathf.Clamp(dir.y / (b.extents.y + 0.0001f), -1f, 1f);
-            float tz = Mathf.Clamp(dir.z / (b.extents.z + 0.0001f), -1f, 1f);
+            // Hard snap each vertex to the nearest face of the bar cuboid
+            // based on which axis it's dominant on
+            float absX = Mathf.Abs(dir.x);
+            float absY = Mathf.Abs(dir.y);
+            float absZ = Mathf.Abs(dir.z);
 
-            targets[i] = center + new Vector3(tx * half.x, ty * half.y, tz * half.z);
+            targets[i] = new Vector3(
+                Mathf.Sign(dir.x == 0 ? 1 : dir.x) * half.x,
+                Mathf.Sign(dir.y == 0 ? 1 : dir.y) * half.y,
+                Mathf.Sign(dir.z == 0 ? 1 : dir.z) * half.z
+            ) + center;
         }
 
         return targets;
+    }
+
+    private Mesh GenerateCleanBarMesh(Mesh currentMesh, int vertexCount)
+    {
+        Bounds b = currentMesh.bounds;
+        Vector3 center = b.center;
+        Vector3 half = b.extents;
+
+        Mesh cleanMesh = new Mesh();
+
+        List<Vector3> verts = new List<Vector3>();
+        List<int> tris = new List<int>();
+        List<Vector3> normals = new List<Vector3>();
+
+        int vertsPerFace = vertexCount / 6;
+        int gridSize = Mathf.Max(2, Mathf.RoundToInt(Mathf.Sqrt(vertsPerFace)));
+
+        // (normal, uAxis, vAxis, faceCenter)
+        (Vector3 normal, Vector3 uAxis, Vector3 vAxis, Vector3 faceCenter)[] faces =
+{
+    (Vector3.up,      Vector3.right,   Vector3.forward, center + Vector3.up      * half.y),
+    (Vector3.down,    Vector3.right,   Vector3.forward, center + Vector3.down    * half.y),
+    (Vector3.right,   Vector3.forward, Vector3.up,      center + Vector3.right   * half.x),
+    (Vector3.left,    Vector3.forward, Vector3.up,      center + Vector3.left    * half.x),
+    (Vector3.back,    Vector3.right,   Vector3.up,      center + Vector3.back    * half.z),
+    (Vector3.forward, Vector3.right,   Vector3.up,      center + Vector3.forward * half.z),
+};
+
+        for (int f = 0; f < faces.Length; f++)
+        {
+            var face = faces[f];
+            int baseIndex = verts.Count;
+
+            Vector3 uExtent = Vector3.Scale(face.uAxis, half);
+            Vector3 vExtent = Vector3.Scale(face.vAxis, half);
+
+            for (int row = 0; row < gridSize; row++)
+            {
+                for (int col = 0; col < gridSize; col++)
+                {
+                    float u = Mathf.Lerp(-1f, 1f, (float)col / (gridSize - 1));
+                    float v = Mathf.Lerp(-1f, 1f, (float)row / (gridSize - 1));
+
+                    Vector3 vert = face.faceCenter + u * uExtent + v * vExtent;
+
+                    // Subtle bevel — nudge corners slightly inward
+                    float bevel = 0.005f;
+                    vert = Vector3.Lerp(vert, center, bevel * (Mathf.Abs(u) + Mathf.Abs(v)));
+
+                    verts.Add(vert);
+                    normals.Add(face.normal);
+                }
+            }
+
+            for (int row = 0; row < gridSize - 1; row++)
+            {
+                for (int col = 0; col < gridSize - 1; col++)
+                {
+                    int i = baseIndex + row * gridSize + col;
+
+                    // Even faces (up, right, forward) — one winding
+                    // Odd faces (down, left, back) — opposite winding
+                    if (f % 2 == 0)
+                    {
+                        tris.Add(i);
+                        tris.Add(i + gridSize);
+                        tris.Add(i + 1);
+                        tris.Add(i + 1);
+                        tris.Add(i + gridSize);
+                        tris.Add(i + gridSize + 1);
+                    }
+                    else
+                    {
+                        tris.Add(i);
+                        tris.Add(i + 1);
+                        tris.Add(i + gridSize);
+                        tris.Add(i + 1);
+                        tris.Add(i + gridSize + 1);
+                        tris.Add(i + gridSize);
+                    }
+                }
+            }
+        }
+
+        cleanMesh.vertices = verts.ToArray();
+        cleanMesh.triangles = tris.ToArray();
+        cleanMesh.normals = normals.ToArray();
+        cleanMesh.RecalculateBounds();
+
+        return cleanMesh;
     }
 
     private void ApplyNormalCondense(RaycastHit hit, Recipe condensingRecipe)
@@ -328,7 +441,21 @@ public class AnvilCrafting : MonoBehaviour
         Vector3[] vertices = mesh.vertices;
 
         // Lerp t is driven by progress mesh reaches target exactly when condensing completes
-        float progress = Mathf.Clamp01(itemScriptOnAnvil.condensed / condensingRecipe.requiredValue);
+        float raw = Mathf.Clamp01(itemScriptOnAnvil.condensed / condensingRecipe.requiredValue);
+        float progress;
+        Debug.Log("raw is " + raw);
+
+        if (raw < 0.1f)
+            progress = Mathf.SmoothStep(0f, 1f, Mathf.Pow(raw, 2f));
+        else if (raw < 0.4f)
+            progress = Mathf.SmoothStep(0f, 1f, Mathf.Pow(raw, 2.5f));
+        else if (raw < 0.9f)
+            progress = Mathf.SmoothStep(0f, 1f, Mathf.Pow(raw, 8f));
+        else
+        {
+            float phase3End = Mathf.SmoothStep(0f, 1f, Mathf.Pow(0.9f, 8f));
+            progress = Mathf.Lerp(phase3End, 1f, Mathf.SmoothStep(0f, 1f, (raw - 0.9f) / 0.1f));
+        }
 
         for (int i = 0; i < vertices.Length; i++)
         {
@@ -338,6 +465,10 @@ public class AnvilCrafting : MonoBehaviour
         mesh.vertices = vertices;
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
+
+        MeshCollider mc = hit.collider.transform.GetComponent<MeshCollider>();
+        if (mc != null)
+            mc.sharedMesh = mesh;
 
         ApplyNormalMaterial(hit.collider.gameObject, progress);
     }
@@ -394,6 +525,10 @@ public class AnvilCrafting : MonoBehaviour
         mesh.vertices = vertices;
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
+
+        MeshCollider mc = hit.transform.GetComponent<MeshCollider>();
+        if (mc != null)
+            mc.sharedMesh = mesh;
     }
 
     private void ModelChange(ItemData changeTo, RaycastHit hit)
@@ -451,6 +586,17 @@ public class AnvilCrafting : MonoBehaviour
                     }
                     if (changeFromItem.type == Itemtype.Bloom)
                     {
+                        MeshFilter mf = obj.GetComponentInChildren<MeshFilter>();
+                        if (mf != null)
+                        {
+                            Mesh cleanMesh = GenerateCleanBarMesh(mf.mesh, 800);
+                            mf.mesh = cleanMesh;
+
+                            MeshCollider mc = obj.GetComponentInChildren<MeshCollider>();
+                            if (mc != null)
+                                mc.sharedMesh = cleanMesh;
+                        }
+
                         itemScript.ApplyJustItemData(changeTo);
                     }
                     if (changeFromItem.type == Itemtype.Ore)
