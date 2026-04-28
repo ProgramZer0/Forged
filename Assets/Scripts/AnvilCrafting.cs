@@ -42,15 +42,13 @@ public class AnvilCrafting : MonoBehaviour
 
     public void ChangeSmithingMode(SmithingMode mode) { currentSmithingMode = mode; }
 
-    public bool HandleShapingEditor(RaycastHit hit)
+    public bool HandleShapingEditor(Recipe shapingRecipe, RaycastHit hit)
     {
         if (hit.transform == null) return false;
 
         if (itemScriptOnAnvil == null)
             if (!TryToGrabItem(hit))
                 return false;
-
-        Recipe shapingRecipe = recipeManager.FindRecipe(PhaseType.Shaping, itemScriptOnAnvil.itemID);
 
         if (shapingRecipe == null) return false;
 
@@ -64,83 +62,17 @@ public class AnvilCrafting : MonoBehaviour
 
         sm.anvilCollider = anvilCollider;
 
-        AnvilHitType hitType = DetermineHitType(hit);
-
         sm.OnHammerHit(
             hit,
             Force.value,
             anvilMgr.GetCurrentAnvilMode(),
             currentSmithingMode,
             true,
-            hitType,
             anvilMgr.GetHammerRight(),
             anvilCollider
         );
 
         return true;
-    }
-
-    private AnvilHitType DetermineHitType(RaycastHit hit)
-    {
-        Vector3 localPoint = transform.InverseTransformPoint(hit.point);
-
-        if (localPoint.x > 0.4f)
-            return AnvilHitType.Edge;
-
-        if (localPoint.x < -0.4f)
-            return AnvilHitType.WarpInward;
-
-        return AnvilHitType.Main;
-    }
-
-    private bool HandleShapingEditor(Recipe shapingRecipe, RaycastHit hit)
-    {
-        if (shapingRecipe != null)
-        {
-            float tempNeeded = shapingRecipe.requiredValue * 20;
-
-            if (itemScriptOnAnvil.heatTimer >= tempNeeded)
-            {
-                Vector3 direction = anvilMgr.GetHitDirection(hit);
-                AnvilHitType hitType = DetermineHitType(hit);
-                EditMesh(direction, hit.point, Force.value * hitForce, hitType, hit);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void EditMesh(Vector3 direction, Vector3 worldPoint, float force, AnvilHitType hitType, RaycastHit hit)
-    {
-        MeshFilter mf = hit.transform.gameObject.GetComponentInChildren<MeshFilter>();
-        Mesh mesh = mf.mesh;
-
-        Vector3[] vertices = mesh.vertices;
-        // Convert hit point to LOCAL SPACE
-        Vector3 localHitPoint = hit.transform.InverseTransformPoint(worldPoint);
-        float radius = hitSurface;
-
-        for (int i = 0; i < vertices.Length; i++)
-        {
-            float distance = Vector3.Distance(vertices[i], localHitPoint);
-
-            if (distance < radius)
-            {
-                float falloff = 1f - (distance / radius);
-                Vector3 localDirection = hit.transform.InverseTransformDirection(direction);
-                vertices[i] += localDirection * force * falloff;
-
-                if (hitType == AnvilHitType.Edge)
-                    vertices[i] += Vector3.right * force * 0.2f * falloff;
-
-                if (hitType == AnvilHitType.WarpInward)
-                    vertices[i] += Vector3.forward * force * 0.3f * falloff;
-            }
-        }
-
-        mesh.vertices = vertices;
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
     }
 
     public bool HandleCrafting(RaycastHit hit)
@@ -174,6 +106,8 @@ public class AnvilCrafting : MonoBehaviour
             }
             else
             {
+                if (anvilMgr.GetCurrentAnvilMode() != AnvilMode.Flat)
+                    return false;
                 //needs heat 
                 if (itemScriptOnAnvil.heatTimer >= 0)
                 {
@@ -352,14 +286,14 @@ public class AnvilCrafting : MonoBehaviour
 
         // (normal, uAxis, vAxis, faceCenter)
         (Vector3 normal, Vector3 uAxis, Vector3 vAxis, Vector3 faceCenter)[] faces =
-{
-    (Vector3.up,      Vector3.right,   Vector3.forward, center + Vector3.up      * half.y),
-    (Vector3.down,    Vector3.right,   Vector3.forward, center + Vector3.down    * half.y),
-    (Vector3.right,   Vector3.forward, Vector3.up,      center + Vector3.right   * half.x),
-    (Vector3.left,    Vector3.forward, Vector3.up,      center + Vector3.left    * half.x),
-    (Vector3.back,    Vector3.right,   Vector3.up,      center + Vector3.back    * half.z),
-    (Vector3.forward, Vector3.right,   Vector3.up,      center + Vector3.forward * half.z),
-};
+        {
+            (Vector3.up,      Vector3.right,   Vector3.forward, center + Vector3.up      * half.y),
+            (Vector3.down,    Vector3.right,   Vector3.forward, center + Vector3.down    * half.y),
+            (Vector3.right,   Vector3.forward, Vector3.up,      center + Vector3.right   * half.x),
+            (Vector3.left,    Vector3.forward, Vector3.up,      center + Vector3.left    * half.x),
+            (Vector3.back,    Vector3.right,   Vector3.up,      center + Vector3.back    * half.z),
+            (Vector3.forward, Vector3.right,   Vector3.up,      center + Vector3.forward * half.z),
+        };
 
         for (int f = 0; f < faces.Length; f++)
         {
@@ -379,7 +313,7 @@ public class AnvilCrafting : MonoBehaviour
                     Vector3 vert = face.faceCenter + u * uExtent + v * vExtent;
 
                     // Subtle bevel — nudge corners slightly inward
-                    float bevel = 0.005f;
+                    float bevel = 0.015f;
                     vert = Vector3.Lerp(vert, center, bevel * (Mathf.Abs(u) + Mathf.Abs(v)));
 
                     verts.Add(vert);

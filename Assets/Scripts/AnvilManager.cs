@@ -272,7 +272,7 @@ public class AnvilManager : MonoBehaviour
             else if (currentAnvilMode == AnvilMode.Peen)
             {
                 StartCoroutine(clickWait());
-                if (crafter.HandleShapingEditor(hit))
+                if (crafter.HandleCrafting(hit))
                     StartCoroutine(SwingHammerAnimation(false));
             }
         }

@@ -254,15 +254,33 @@ public class WorkstationScript : MonoBehaviour
         Debug.Log("take off tongs");
         Tongs.GetComponent<Animator>().SetBool("TongGrab", true);
         objOnTongs.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.None;
-        objOnTongs.GetComponent<Rigidbody>().useGravity = true;
+        
         objOnTongs.GetComponent<Collider>().enabled = true;
         objOnTongs.transform.position = hit.point + new Vector3(0, 0, 0.1f);
-        Debug.Log("258");
+        Debug.Log("pos is + " + objOnTongs.transform.position);
 
+        // In Normal mode, snap Y up if this item has a condensing recipe
+        if (currentSmithingMode == SmithingMode.Normal)
+        {
+            Items itemScript = objOnTongs.GetComponent<Items>();
+            if (itemScript != null)
+            {
+                Recipe condensingRecipe = recipeManager.FindRecipe(PhaseType.Condensing, itemScript.itemID);
+                if (condensingRecipe != null)
+                {
+                    Vector3 currentForward = objOnTongs.transform.forward;
+                    currentForward.y = 0f;
+                    if (currentForward.sqrMagnitude < 0.001f)
+                        currentForward = Vector3.forward;
+                    objOnTongs.transform.rotation = Quaternion.LookRotation(currentForward.normalized, Vector3.up);
+                }
+            }
+        }
+
+        objOnTongs.GetComponent<Rigidbody>().useGravity = true;
         objOnTongs.transform.SetParent(itemDefaultParents.transform);
         objOnTongs = null;
         itemOnTongs = null;
-        Debug.Log("261");
         smelteryScript.HandleItemOnTongs();
     }
     private void PutItemOnTongs(RaycastHit hit)
@@ -320,10 +338,10 @@ public class WorkstationScript : MonoBehaviour
                     if (currentForward.sqrMagnitude < 0.001f)
                         currentForward = Vector3.forward;
                     obj.transform.rotation = Quaternion.LookRotation(currentForward.normalized, Vector3.up);
-
                 }
             }
         }
+
         objOnTongs = obj;
         obj.GetComponent<Rigidbody>().constraints = RigidbodyConstraints.FreezeRotation;
 
