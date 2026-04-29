@@ -514,5 +514,8 @@ public class AnvilManager : MonoBehaviour
     public Vector3 GetHammerRight() { return hammerOBJ.transform.right; }
 
     public AnvilMode GetCurrentAnvilMode() { return currentAnvilMode; }
+    public float GetXSliderHelper() { return 0; }
+    public float GetZSliderHelper() { return 0; }
+    public float GetYSliderHelper() { return 0; }
     #endregion
 }

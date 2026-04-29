@@ -1,71 +1,41 @@
 using UnityEngine;
 
-// ShapeManager is added at runtime to a metal item when a shaping recipe is found for it.
-// It handles all mesh deformation when the player hammers the metal on the anvil.
-// The core principle: the anvil is a hard floor — downward force cannot push metal through it,
-// so all hammer force is redirected outward laterally. Where it spreads depends on hammer type.
 public class ShapeManager : MonoBehaviour
 {
     // -------------------------------------------------------------------------
-    // Public Fields (set by AnvilCrafting when this component is added)
+    // Public
     // -------------------------------------------------------------------------
 
-    // The full collider of the anvil. Used to raycast against so vertices
-    // never clip through — works on the horn, flat, and edges automatically.
     public Collider anvilCollider;
 
-    // -------------------------------------------------------------------------
-    // Inspector Settings
-    // -------------------------------------------------------------------------
-
-    // The radius around the hit point that gets affected by each hammer strike.
-    // Larger = broader, softer deformation. Smaller = sharper, more localized.
+    [Header("Deformation")]
     public float hitRadius = 0.2f;
 
-    // Not currently enforced per-hit but reserved for future thickness checks.
-    public float minThicknessRatio = 0.15f;
-
-    // Target blade length used for shaping guidance (not yet enforced, reserved).
-    public float desiredLength = 1.5f;
+    // How strongly the Normal mode assist nudges toward the target shape.
+    // Keep small — this should feel like a gentle bias, not a snap.
+    [Header("Normal Mode Assist")]
+    public float assistStrength = 0.3f;
 
     // -------------------------------------------------------------------------
-    // Private State
+    // Private
     // -------------------------------------------------------------------------
 
-    // The live mesh being deformed. We work directly on this each hit.
     private Mesh deformingMesh;
-
-    private Vector3 cachedMeshCenter;
-
-    // Current vertex positions in local space. Updated before each deformation pass.
     private Vector3[] vertices;
-
-    // The original Y values of each vertex at awake time.
-    // Kept for reference — could be used later for reset or thickness enforcement.
-    private float[] initialHeights;
-
-    // Maps each vertex index to a canonical index. Vertices that share the same
-    // position get the same canonical index so they always move together.
-    // This prevents whole sides shifting when only part of the surface is hit,
-    // which happens because Unity splits vertices at UV/normal seams.
     private int[] weldMap;
+    private Vector3 cachedMeshCenter;
+    private AnvilManager anvilMgr;
 
     // -------------------------------------------------------------------------
-    // Unity Lifecycle
+    // Init
     // -------------------------------------------------------------------------
 
     void Awake()
     {
         deformingMesh = GetComponentInChildren<MeshFilter>().mesh;
         vertices = deformingMesh.vertices;
-
-        // Cache center once — must not update as mesh deforms or spread math breaks
         cachedMeshCenter = deformingMesh.bounds.center;
-
-        initialHeights = new float[vertices.Length];
-        for (int i = 0; i < vertices.Length; i++)
-            initialHeights[i] = vertices[i].y;
-
+        anvilMgr = FindFirstObjectByType<AnvilManager>();
         BuildWeldMap();
     }
 
@@ -73,25 +43,19 @@ public class ShapeManager : MonoBehaviour
     // Weld Map
     // -------------------------------------------------------------------------
 
-    // Builds a map from each vertex index to a canonical index.
-    // Any two vertices closer than the threshold are considered the same point
-    // and get the same canonical index. This means when one moves, all its
-    // duplicates move by the same delta — fixing the whole-side-shifts bug.
     private void BuildWeldMap()
     {
         weldMap = new int[vertices.Length];
-        float threshold = 0.0001f;
-        float thresholdSq = threshold * threshold;
+        float thresholdSq = 0.0001f * 0.0001f;
 
         for (int i = 0; i < vertices.Length; i++)
         {
-            weldMap[i] = i; // default: maps to itself
+            weldMap[i] = i;
 
             for (int j = 0; j < i; j++)
             {
                 if ((vertices[i] - vertices[j]).sqrMagnitude < thresholdSq)
                 {
-                    // Share the canonical index of the earlier duplicate.
                     weldMap[i] = weldMap[j];
                     break;
                 }
@@ -99,41 +63,25 @@ public class ShapeManager : MonoBehaviour
         }
     }
 
-    // Applies a delta to vertex i and all other vertices that share its canonical index,
-    // but only if the twin is within range of the hit point. This prevents symmetric
-    // vertices on the opposite side of the mesh from moving when they shouldn't.
+    // Applies a delta to a vertex and all nearby welded twins.
+    // Twins that are on the opposite side of the mesh (outside hit radius) are skipped.
     private void ApplyWeldedDelta(int i, Vector3 delta, Vector3 localHitCenter)
     {
         int canonical = weldMap[i];
-
-        // Use a slightly larger radius for twins so seam vertices don't get orphaned,
-        // but still exclude vertices that are clearly on the opposite side.
         float twinRadiusSq = hitRadius * hitRadius * 4f;
 
         for (int j = 0; j < vertices.Length; j++)
         {
             if (weldMap[j] != canonical) continue;
-
-            // Only move twins that are actually near the hit point.
             if ((vertices[j] - localHitCenter).sqrMagnitude > twinRadiusSq) continue;
-
             vertices[j] += delta;
         }
     }
 
     // -------------------------------------------------------------------------
-    // Public Entry Point
+    // Entry Point
     // -------------------------------------------------------------------------
 
-    // Called by AnvilCrafting every time the player lands a hammer strike during shaping.
-    // hit              — the raycast hit from the click on the metal surface
-    // force            — how hard the strike is (driven by the Force slider in AnvilCrafting)
-    // hammerType       — Flat or Peen, determines spread pattern
-    // currentMode      — Normal (easier, auto-straightens) or Expert (precise, player-controlled)
-    // autoStraighten   — only applies in Normal mode, nudges the metal straight after each hit
-    // hammerRightWorld — the right vector of the hammer object in world space, used by peen
-    //                    to know which direction to elongate
-    // _anvilCollider   — passed in so ClampToAnvil has a fresh reference each strike
     public void OnHammerHit(
         RaycastHit hit,
         float force,
@@ -143,266 +91,227 @@ public class ShapeManager : MonoBehaviour
         Vector3 hammerRightWorld,
         Collider _anvilCollider)
     {
-        // Keep anvilCollider up to date in case it wasn't set at AddComponent time.
         anvilCollider = _anvilCollider;
-
-        // Refresh our vertex array from the mesh before each deformation pass.
         vertices = deformingMesh.vertices;
 
-        // Convert the world-space hit point into this object's local space.
-        // All deformation math runs in local space for correctness.
         Vector3 localHit = transform.InverseTransformPoint(hit.point);
 
-        // Normal mode: simpler spread, more forgiving, auto-straightens.
-        // Expert mode: directional and precise, no auto-correction.
-        if (currentMode == SmithingMode.Normal)
-            ApplyNormal(localHit, force);
-        else
-            ApplyExpert(localHit, force, hammerType, hammerRightWorld);
+        // Measure thickness at the hit point to drive compression resistance.
+        float thickness = MeasureThickness(hit.point, hit.normal);
 
-        // In Normal mode, gently nudge vertices back toward center X after
-        // each hit so the metal doesn't wander sideways unintentionally.
-        //if (autoStraighten && currentMode == SmithingMode.Normal)
-         //   AutoStraighten(0.1f);
+        // Compression amount — resists exponentially as metal gets thinner.
+        // As thickness -> 0, compression -> 0 (can't compress paper-thin metal).
+        float maxCompress = force * 0.015f;
+        float compression = maxCompress * (thickness * thickness) / (thickness * thickness + 0.01f);
 
-        // Push the modified vertices back to the mesh and refresh geometry.
+        // Volume conservation: derive lateral expansion from compression.
+        float newThickness = Mathf.Max(thickness - compression, 0.001f);
+        float lateralExpansion = hitRadius * (Mathf.Sqrt(thickness / newThickness) - 1f);
+
+        // --- PHYSICAL DEFORMATION ---
+        ApplyDeformation(localHit, hit.point, hit.normal, compression, lateralExpansion, hammerType, hammerRightWorld);
+
+        // --- NORMAL MODE ASSIST ---
+        // After physical deformation, gently nudge vertices toward the target
+        // shape defined by the sliders in AnvilManager. Volume is always conserved
+        // because the target is derived from the current volume and the slider ratios.
+        //if (currentMode == SmithingMode.Normal)
+            //ApplyNormalAssist(localHit, force);
+
         deformingMesh.vertices = vertices;
         deformingMesh.RecalculateNormals();
         deformingMesh.RecalculateBounds();
+
+        // Update mesh collider so thickness raycasts are accurate next hit.
+        MeshCollider mc = GetComponentInChildren<MeshCollider>();
+        if (mc != null)
+            mc.sharedMesh = deformingMesh;
     }
 
     // -------------------------------------------------------------------------
-    // Normal Mode Deformation
+    // Physical Deformation
     // -------------------------------------------------------------------------
 
-    // Simpler, more forgiving deformation for Normal smithing mode.
-    // Compresses Y and expands X and Z around the hit point.
-    // Expansion is calculated relative to the mesh center, not the hit point —
-    // this ensures both sides of the mesh spread outward correctly instead of
-    // one side growing and the other shrinking.
-    private void ApplyNormal(Vector3 center, float force)
+    private void ApplyDeformation(
+        Vector3 localHit,
+        Vector3 worldHit,
+        Vector3 worldNormal,
+        float compression,
+        float lateralExpansion,
+        AnvilMode hammerType,
+        Vector3 hammerRightWorld)
     {
-        float radius = hitRadius;
-        float sqrRadius = radius * radius;
-        float invSqrRadius = 1f / sqrRadius;
+        float sqrRadius = hitRadius * hitRadius;
+        Vector3 localNormal = transform.InverseTransformDirection(worldNormal);
 
-        float delta = force * 0.03f;
-
-        // How much to compress height vs expand width/length per hit.
-        float compressY = 1f - delta * 0.5f;
-        float expandX = 1f + delta * 1.2f;
-        float expandZ = 1f + delta * 0.2f;
-
-        // Spread is relative to mesh center so both sides expand outward equally.
-        Vector3 meshCenter = cachedMeshCenter;
+        // For peen: spread direction is perpendicular to the hammer's right vector.
+        Vector3 localPeenPerp = Vector3.zero;
+        if (hammerType == AnvilMode.Peen)
+        {
+            Vector3 localPeenDir = transform.InverseTransformDirection(hammerRightWorld);
+            localPeenPerp = Vector3.Cross(localNormal, localPeenDir).normalized;
+        }
 
         for (int i = 0; i < vertices.Length; i++)
         {
-            // Only process canonical vertices — duplicates are handled via ApplyWeldedDelta.
             if (weldMap[i] != i) continue;
 
-            // Falloff is based on distance from the hit point.
-            Vector3 offset = vertices[i] - center;
+            Vector3 localPos = vertices[i];
+            Vector3 offset = localPos - localHit;
             float distSqr = offset.sqrMagnitude;
             if (distSqr > sqrRadius) continue;
 
-            float falloff = 1f - (distSqr * invSqrRadius);
-            falloff = Mathf.Clamp01(falloff);
+            float falloff = 1f - (distSqr / sqrRadius);
             falloff *= falloff;
 
-            // Expansion relative to mesh center — both sides push outward symmetrically.
-            Vector3 fromCenter = vertices[i] - meshCenter;
-            fromCenter.y *= Mathf.Lerp(1f, compressY, falloff);
-            fromCenter.x *= Mathf.Lerp(1f, expandX, falloff);
-            fromCenter.z *= Mathf.Lerp(1f, expandZ, falloff);
+            Vector3 delta = Vector3.zero;
 
-            Vector3 candidate = meshCenter + fromCenter;
-            candidate = ClampToAnvil(vertices[i], candidate);
+            // Compress inward along hit normal.
+            delta -= localNormal * compression * falloff;
 
-            // Apply the delta to this vertex and all its nearby welded twins.
-            ApplyWeldedDelta(i, candidate - vertices[i], center);
-        }
-    }
-
-    // -------------------------------------------------------------------------
-    // Expert Mode Deformation
-    // -------------------------------------------------------------------------
-
-    // Routes to the correct expert deformation based on hammer type.
-    private void ApplyExpert(Vector3 center, float force, AnvilMode hammerType, Vector3 hammerRightWorld)
-    {
-        float radius = hitRadius;
-        float sqrRadius = radius * radius;
-        float delta = force * 0.02f;
-
-        if (hammerType == AnvilMode.Flat)
-            ExpertFlat(center, radius, sqrRadius, delta);
-        else
-            ExpertPeen(center, radius, sqrRadius, delta, hammerRightWorld);
-    }
-
-    // Expert Flat: spreads material proportionally based on the current shape of the metal.
-    // Wider metal spreads more lengthwise; longer metal spreads more widthwise.
-    // This mimics how a real flat hammer works — metal takes the path of least resistance.
-    private void ExpertFlat(Vector3 center, float radius, float sqrRadius, float delta)
-    {
-        float invSqrRadius = 1f / sqrRadius;
-
-        // Measure the extent of affected vertices to determine spread direction.
-        float minX = float.MaxValue, maxX = float.MinValue;
-        float minZ = float.MaxValue, maxZ = float.MinValue;
-
-        for (int i = 0; i < vertices.Length; i++)
-        {
-            if (weldMap[i] != i) continue;
-
-            Vector3 offset = vertices[i] - center;
-            if (offset.sqrMagnitude > sqrRadius) continue;
-
-            if (vertices[i].x < minX) minX = vertices[i].x;
-            if (vertices[i].x > maxX) maxX = vertices[i].x;
-            if (vertices[i].z < minZ) minZ = vertices[i].z;
-            if (vertices[i].z > maxZ) maxZ = vertices[i].z;
-        }
-
-        float width = maxX - minX;
-        float length = maxZ - minZ;
-        float total = width + length;
-        if (total <= 0f) return;
-
-        // Spread more in the direction that already has less extent — like real metal.
-        float spreadX = length / total;
-        float spreadZ = width / total;
-
-        float compressY = 1f - delta;
-        float expandX = 1f + delta * spreadX;
-        float expandZ = 1f + delta * spreadZ;
-
-        // Spread relative to mesh center so both sides push outward equally.
-        Vector3 meshCenter = cachedMeshCenter;
-
-        for (int i = 0; i < vertices.Length; i++)
-        {
-            if (weldMap[i] != i) continue;
-
-            Vector3 offset = vertices[i] - center;
-            float distSqr = offset.sqrMagnitude;
-            if (distSqr > sqrRadius) continue;
-
-            float falloff = 1f - (distSqr * invSqrRadius);
-            falloff = Mathf.Clamp01(falloff);
-            falloff *= falloff;
-
-            Vector3 fromCenter = vertices[i] - meshCenter;
-            fromCenter.y *= Mathf.Lerp(1f, compressY, falloff);
-            fromCenter.x *= Mathf.Lerp(1f, expandX, falloff);
-            fromCenter.z *= Mathf.Lerp(1f, expandZ, falloff);
-
-            Vector3 candidate = meshCenter + fromCenter;
-            candidate = ClampToAnvil(vertices[i], candidate);
-
-            ApplyWeldedDelta(i, candidate - vertices[i], center);
-        }
-    }
-
-    // Expert Peen: elongates material strongly in one direction (perpendicular to peen edge).
-    // The spread direction is determined by which way the hammer's right vector points.
-    // This is how a real cross-peen hammer draws metal out in a specific direction.
-    private void ExpertPeen(Vector3 center, float radius, float sqrRadius, float delta, Vector3 hammerRightWorld)
-    {
-        float invSqrRadius = 1f / sqrRadius;
-
-        float compressY = 1f - delta;
-
-        // Primary = direction the peen face points (less spread).
-        // Secondary = perpendicular to peen (strong elongation — this is where metal draws out).
-        float expandPrimary = 1f + delta * 0.2f;
-        float expandSecondary = 1f + delta * 0.9f;
-
-        // Convert the hammer's world-space right vector into this object's local space
-        // to determine whether the peen is aligned more with X or Z.
-        Vector3 localPeenDir = transform.InverseTransformDirection(hammerRightWorld);
-        bool alongX = Mathf.Abs(localPeenDir.x) > Mathf.Abs(localPeenDir.z);
-
-        // Spread relative to mesh center so both sides push outward equally.
-        Vector3 meshCenter = cachedMeshCenter;
-
-        for (int i = 0; i < vertices.Length; i++)
-        {
-            if (weldMap[i] != i) continue;
-
-            Vector3 offset = vertices[i] - center;
-            float distSqr = offset.sqrMagnitude;
-            if (distSqr > sqrRadius) continue;
-
-            float falloff = 1f - (distSqr * invSqrRadius);
-            falloff = Mathf.Clamp01(falloff);
-            falloff *= falloff;
-
-            Vector3 fromCenter = vertices[i] - meshCenter;
-
-            // Always compress downward.
-            fromCenter.y *= Mathf.Lerp(1f, compressY, falloff);
-
-            // Spread: primary direction (along peen) gets less; perpendicular gets more.
-            if (alongX)
+            // Lateral expansion — flat spreads radially, peen spreads along one axis.
+            if (hammerType == AnvilMode.Flat)
             {
-                fromCenter.x *= Mathf.Lerp(1f, expandPrimary, falloff);
-                fromCenter.z *= Mathf.Lerp(1f, expandSecondary, falloff);
+                // Radial direction from mesh center, projected onto the anvil plane.
+                Vector3 radial = localPos - cachedMeshCenter;
+                radial -= Vector3.Dot(radial, localNormal) * localNormal;
+
+                if (radial.sqrMagnitude > 0.0001f)
+                {
+                    radial.Normalize();
+                    delta += radial * lateralExpansion * falloff;
+                }
             }
-            else
+            else // Peen
             {
-                fromCenter.z *= Mathf.Lerp(1f, expandPrimary, falloff);
-                fromCenter.x *= Mathf.Lerp(1f, expandSecondary, falloff);
+                // Spread perpendicular to peen edge — vertices on each side push outward.
+                float side = Mathf.Sign(Vector3.Dot(localPos - cachedMeshCenter, localPeenPerp));
+                delta += localPeenPerp * side * lateralExpansion * falloff;
             }
 
-            Vector3 candidate = meshCenter + fromCenter;
-            candidate = ClampToAnvil(vertices[i], candidate);
-
-            ApplyWeldedDelta(i, candidate - vertices[i], center);
+            Vector3 candidate = ClampToAnvil(localPos, localPos + delta);
+            ApplyWeldedDelta(i, candidate - localPos, localHit);
         }
     }
 
     // -------------------------------------------------------------------------
-    // Auto Straighten (Normal Mode Only)
+    // Normal Mode Assist
     // -------------------------------------------------------------------------
 
-    // After each hit in Normal mode, gently nudge all vertices toward the mesh's
-    // center X. This prevents the metal from drifting sideways over many hits,
-    // making Normal mode more forgiving without removing all challenge.
-    private void AutoStraighten(float strength)
+    // Calculates the target dimensions from the current volume and slider ratios,
+    // then nudges each vertex toward those dimensions. Because the ratios sum to 1
+    // and the target is derived from current volume, this can never add material 
+    // it only redistributes what already exists.
+    private void ApplyNormalAssist(Vector3 localHit, float force)
     {
-        Vector3 meshCenter = cachedMeshCenter;
+        if (anvilMgr == null) return;
+
+        // Get slider ratios from AnvilManager — these always sum to 1.
+        float rx = anvilMgr.GetXSliderHelper();
+        float ry = anvilMgr.GetYSliderHelper();
+        float rz = anvilMgr.GetZSliderHelper();
+
+        // Current dimensions from live vertex data.
+        Vector3 current = GetCurrentDimensions();
+        float volume = current.x * current.y * current.z;
+
+        if (volume <= 0f) return;
+
+        // Derive target dimensions from ratios and current volume.
+        // rx * ry * rz gives the product of ratios; k scales them to match volume.
+        // If ratios sum to 1 and are all > 0, this always produces valid dimensions.
+        float ratioProduct = rx * ry * rz;
+        if (ratioProduct <= 0f) return;
+
+        float k = Mathf.Pow(volume / ratioProduct, 1f / 3f);
+        Vector3 target = new Vector3(rx * k, ry * k, rz * k);
+
+        // Error = how far current dimensions are from target.
+        // Positive error means the axis needs to grow, negative means shrink.
+        Vector3 error = target - current;
+
+        // Scale nudge by force and assist strength — stronger hits bias more.
+        float nudgeScale = assistStrength * force * 0.01f;
 
         for (int i = 0; i < vertices.Length; i++)
         {
-            vertices[i].x = Mathf.Lerp(vertices[i].x, meshCenter.x, strength);
+            if (weldMap[i] != i) continue;
+
+            Vector3 v = vertices[i];
+            Vector3 fromCenter = v - cachedMeshCenter;
+
+            Vector3 delta = Vector3.zero;
+
+            // For each axis: if the vertex is on the positive side of center,
+            // push it outward if that axis needs to grow, inward if it needs to shrink.
+            // Vertices near center barely move (fromCenter ~= 0), which is correct 
+            // the edges are where growth/shrinkage actually manifests.
+            if (Mathf.Abs(fromCenter.x) > 0.001f)
+                delta.x = Mathf.Sign(fromCenter.x) * error.x * nudgeScale;
+
+            if (Mathf.Abs(fromCenter.y) > 0.001f)
+                delta.y = Mathf.Sign(fromCenter.y) * error.y * nudgeScale;
+
+            if (Mathf.Abs(fromCenter.z) > 0.001f)
+                delta.z = Mathf.Sign(fromCenter.z) * error.z * nudgeScale;
+
+            // Clamp assist delta so it never overpowers the physical deformation.
+            delta = Vector3.ClampMagnitude(delta, 0.005f);
+
+            if (delta.sqrMagnitude < 0.000001f) continue;
+
+            Vector3 candidate = ClampToAnvil(v, v + delta);
+
+            // Assist applies across the whole mesh, not just the hit radius,
+            // so pass the mesh center as the locality check — all vertices qualify.
+            ApplyWeldedDelta(i, candidate - v, cachedMeshCenter);
         }
     }
 
     // -------------------------------------------------------------------------
-    // Anvil Floor Clamp
+    // Helpers
     // -------------------------------------------------------------------------
+
+    // Returns the current bounding dimensions of the mesh in local space.
+    private Vector3 GetCurrentDimensions()
+    {
+        Vector3 min = vertices[0];
+        Vector3 max = vertices[0];
+
+        for (int i = 1; i < vertices.Length; i++)
+        {
+            min = Vector3.Min(min, vertices[i]);
+            max = Vector3.Max(max, vertices[i]);
+        }
+
+        return max - min;
+    }
+
+    // Fires a ray inward through the mesh to measure current thickness at the hit point.
+    private float MeasureThickness(Vector3 worldPoint, Vector3 worldNormal)
+    {
+        Ray ray = new Ray(worldPoint + worldNormal * 0.001f, -worldNormal);
+
+        MeshCollider mc = GetComponentInChildren<MeshCollider>();
+        if (mc != null && mc.Raycast(ray, out RaycastHit hit, 2f))
+            return hit.distance;
+
+        // Fallback: use mesh bounds along hit normal direction.
+        Vector3 localNormal = transform.InverseTransformDirection(worldNormal);
+        float fallback = Mathf.Abs(Vector3.Dot(deformingMesh.bounds.size, localNormal));
+        return Mathf.Max(fallback, 0.01f);
+    }
 
     // Prevents a vertex from going below the physical anvil surface.
-    // Works by raycasting straight down from the candidate position against the
-    // anvil's actual collider. This means it respects the horn's curve, the flat
-    // top, and the edges — no hardcoded flat floor assumption.
-    // originalLocal  — where the vertex was before this hit (fallback if no anvil hit)
-    // candidateLocal — where the deformation wants to move it
     private Vector3 ClampToAnvil(Vector3 originalLocal, Vector3 candidateLocal)
     {
         if (anvilCollider == null) return candidateLocal;
 
-        // Convert to world space so we can raycast against the scene collider.
         Vector3 worldCandidate = transform.TransformPoint(candidateLocal);
-
-        // Ray comes from slightly above and shoots straight down.
         Ray ray = new Ray(worldCandidate + Vector3.up * 0.1f, Vector3.down);
 
         if (anvilCollider.Raycast(ray, out RaycastHit hit, 0.5f))
         {
-            // If the candidate would go below where the anvil surface is, push it back up.
             if (worldCandidate.y < hit.point.y)
             {
                 worldCandidate.y = hit.point.y;
