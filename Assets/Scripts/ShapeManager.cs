@@ -12,7 +12,7 @@ public class ShapeManager : MonoBehaviour
     public float hitRadius = 0.2f;
 
     // How strongly the Normal mode assist nudges toward the target shape.
-    // Keep small — this should feel like a gentle bias, not a snap.
+    // Keep small  this should feel like a gentle bias, not a snap.
     [Header("Normal Mode Assist")]
     public float assistStrength = 0.3f;
 
@@ -99,7 +99,7 @@ public class ShapeManager : MonoBehaviour
         // Measure thickness at the hit point to drive compression resistance.
         float thickness = MeasureThickness(hit.point, hit.normal);
 
-        // Compression amount — resists exponentially as metal gets thinner.
+        // Compression amount resists exponentially as metal gets thinner.
         // As thickness -> 0, compression -> 0 (can't compress paper-thin metal).
         float maxCompress = force * 0.015f;
         float compression = maxCompress * (thickness * thickness) / (thickness * thickness + 0.01f);
@@ -114,9 +114,9 @@ public class ShapeManager : MonoBehaviour
         // --- NORMAL MODE ASSIST ---
         // After physical deformation, gently nudge vertices toward the target
         // shape defined by the sliders in AnvilManager. Volume is always conserved
-        // because the target is derived from the current volume and the slider ratios.
-        //if (currentMode == SmithingMode.Normal)
-            //ApplyNormalAssist(localHit, force);
+        // because the target is derived from the actual mesh volume and slider ratios.
+        if (currentMode == SmithingMode.Normal)
+            ApplyNormalAssist(localHit, force);
 
         deformingMesh.vertices = vertices;
         deformingMesh.RecalculateNormals();
@@ -169,7 +169,7 @@ public class ShapeManager : MonoBehaviour
             // Compress inward along hit normal.
             delta -= localNormal * compression * falloff;
 
-            // Lateral expansion — flat spreads radially, peen spreads along one axis.
+            // Lateral expansion flat spreads radially, peen spreads along one axis.
             if (hammerType == AnvilMode.Flat)
             {
                 // Radial direction from mesh center, projected onto the anvil plane.
@@ -184,7 +184,7 @@ public class ShapeManager : MonoBehaviour
             }
             else // Peen
             {
-                // Spread perpendicular to peen edge — vertices on each side push outward.
+                // Spread perpendicular to peen edge vertices on each side push outward.
                 float side = Mathf.Sign(Vector3.Dot(localPos - cachedMeshCenter, localPeenPerp));
                 delta += localPeenPerp * side * lateralExpansion * falloff;
             }
@@ -198,28 +198,29 @@ public class ShapeManager : MonoBehaviour
     // Normal Mode Assist
     // -------------------------------------------------------------------------
 
-    // Calculates the target dimensions from the current volume and slider ratios,
-    // then nudges each vertex toward those dimensions. Because the ratios sum to 1
-    // and the target is derived from current volume, this can never add material 
+    // Calculates target dimensions from the REAL mesh volume and slider ratios,
+    // then nudges each vertex toward those dimensions. Because ratios sum to 1
+    // and the target is derived from actual volume, this can never add material 
     // it only redistributes what already exists.
     private void ApplyNormalAssist(Vector3 localHit, float force)
     {
         if (anvilMgr == null) return;
 
-        // Get slider ratios from AnvilManager — these always sum to 1.
+        // Get slider ratios from AnvilManager these always sum to 1.
         float rx = anvilMgr.GetXSliderHelper();
         float ry = anvilMgr.GetYSliderHelper();
         float rz = anvilMgr.GetZSliderHelper();
 
-        // Current dimensions from live vertex data.
-        Vector3 current = GetCurrentDimensions();
-        float volume = current.x * current.y * current.z;
-
+        // Use the real mesh volume rather than bounding box approximation.
+        // Bounding box would be wrong for any non-rectangular shape.
+        float volume = CalculateMeshVolume(deformingMesh, transform);
         if (volume <= 0f) return;
 
-        // Derive target dimensions from ratios and current volume.
-        // rx * ry * rz gives the product of ratios; k scales them to match volume.
-        // If ratios sum to 1 and are all > 0, this always produces valid dimensions.
+        // Current bounding dimensions — used to measure error per axis.
+        Vector3 current = GetCurrentDimensions();
+
+        // Derive target dimensions from ratios and real volume.
+        // k scales the ratios so the resulting box matches the actual volume.
         float ratioProduct = rx * ry * rz;
         if (ratioProduct <= 0f) return;
 
@@ -227,10 +228,10 @@ public class ShapeManager : MonoBehaviour
         Vector3 target = new Vector3(rx * k, ry * k, rz * k);
 
         // Error = how far current dimensions are from target.
-        // Positive error means the axis needs to grow, negative means shrink.
+        // Positive = axis needs to grow, negative = axis needs to shrink.
         Vector3 error = target - current;
 
-        // Scale nudge by force and assist strength — stronger hits bias more.
+        // Scale nudge by force and assist strength stronger hits bias more.
         float nudgeScale = assistStrength * force * 0.01f;
 
         for (int i = 0; i < vertices.Length; i++)
@@ -242,10 +243,8 @@ public class ShapeManager : MonoBehaviour
 
             Vector3 delta = Vector3.zero;
 
-            // For each axis: if the vertex is on the positive side of center,
-            // push it outward if that axis needs to grow, inward if it needs to shrink.
-            // Vertices near center barely move (fromCenter ~= 0), which is correct 
-            // the edges are where growth/shrinkage actually manifests.
+            // For each axis: push outward if that axis needs to grow,
+            // inward if it needs to shrink. Vertices near center barely move
             if (Mathf.Abs(fromCenter.x) > 0.001f)
                 delta.x = Mathf.Sign(fromCenter.x) * error.x * nudgeScale;
 
@@ -262,10 +261,47 @@ public class ShapeManager : MonoBehaviour
 
             Vector3 candidate = ClampToAnvil(v, v + delta);
 
-            // Assist applies across the whole mesh, not just the hit radius,
-            // so pass the mesh center as the locality check — all vertices qualify.
+            // Assist applies across the whole mesh so pass mesh center
+            // as locality  all canonical vertices qualify.
             ApplyWeldedDelta(i, candidate - v, cachedMeshCenter);
         }
+    }
+
+    // -------------------------------------------------------------------------
+    // Volume
+    // -------------------------------------------------------------------------
+
+    // Calculates the real volume of a mesh using the signed tetrahedron method.
+    // Much more accurate than bounding box approximation for non-rectangular shapes.
+    // Pass transform if the mesh is scaled or rotated in world space.
+    public static float CalculateMeshVolume(Mesh mesh, Transform transform = null)
+    {
+        Vector3[] vertices = mesh.vertices;
+        int[] triangles = mesh.triangles;
+        float volume = 0f;
+
+        for (int i = 0; i < triangles.Length; i += 3)
+        {
+            Vector3 p1 = vertices[triangles[i]];
+            Vector3 p2 = vertices[triangles[i + 1]];
+            Vector3 p3 = vertices[triangles[i + 2]];
+
+            if (transform != null)
+            {
+                p1 = transform.TransformPoint(p1);
+                p2 = transform.TransformPoint(p2);
+                p3 = transform.TransformPoint(p3);
+            }
+
+            volume += SignedVolumeOfTriangle(p1, p2, p3);
+        }
+
+        return Mathf.Abs(volume);
+    }
+
+    private static float SignedVolumeOfTriangle(Vector3 p1, Vector3 p2, Vector3 p3)
+    {
+        return Vector3.Dot(p1, Vector3.Cross(p2, p3)) / 6f;
     }
 
     // -------------------------------------------------------------------------
@@ -273,6 +309,7 @@ public class ShapeManager : MonoBehaviour
     // -------------------------------------------------------------------------
 
     // Returns the current bounding dimensions of the mesh in local space.
+    // Used for per-axis error calculation in the assist  not for volume.
     private Vector3 GetCurrentDimensions()
     {
         Vector3 min = vertices[0];
@@ -288,6 +325,7 @@ public class ShapeManager : MonoBehaviour
     }
 
     // Fires a ray inward through the mesh to measure current thickness at the hit point.
+    // Used to drive compression resistance  thin metal resists further compression.
     private float MeasureThickness(Vector3 worldPoint, Vector3 worldNormal)
     {
         Ray ray = new Ray(worldPoint + worldNormal * 0.001f, -worldNormal);
@@ -296,13 +334,14 @@ public class ShapeManager : MonoBehaviour
         if (mc != null && mc.Raycast(ray, out RaycastHit hit, 2f))
             return hit.distance;
 
-        // Fallback: use mesh bounds along hit normal direction.
+        // Fallback: use mesh bounds extent along hit normal if collider misses.
         Vector3 localNormal = transform.InverseTransformDirection(worldNormal);
         float fallback = Mathf.Abs(Vector3.Dot(deformingMesh.bounds.size, localNormal));
         return Mathf.Max(fallback, 0.01f);
     }
 
     // Prevents a vertex from going below the physical anvil surface.
+    // Raycasts against the actual anvil collider so it works on horn and edges too.
     private Vector3 ClampToAnvil(Vector3 originalLocal, Vector3 candidateLocal)
     {
         if (anvilCollider == null) return candidateLocal;

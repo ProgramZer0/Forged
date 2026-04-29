@@ -233,15 +233,19 @@ public class AnvilCrafting : MonoBehaviour
     /// Shape is a flat elongated ingot. Called only once per item
     /// and cached on a CondensingData component.
     /// </summary>
-    private Vector3[] GenerateBarTargetVertices(Mesh mesh, float volumeRatio)
+    private Vector3[] GenerateBarTargetVertices(Mesh mesh, float volumeRatio, Transform transform)
     {
         Bounds b = mesh.bounds;
-        float originalVolume = b.size.x * b.size.y * b.size.z;
+        float originalVolume = CalculateMeshVolume(mesh, transform);
         float targetVolume = originalVolume * volumeRatio;
 
-        float barY = Mathf.Pow(targetVolume, 1f / 3f) * 0.35f;
-        float barX = Mathf.Pow(targetVolume, 1f / 3f) * 0.7f;
-        float barZ = targetVolume / (barY * barX);
+        Vector3 ratio = new Vector3(2f, 1f, 5f); // X:Y:Z shape of rod
+
+        float k = Mathf.Pow(targetVolume / (ratio.x * ratio.y * ratio.z), 1f / 3f);
+
+        float barX = ratio.x * k;
+        float barY = ratio.y * k;
+        float barZ = ratio.z * k;
 
         Vector3 center = b.center;
         Vector3 half = new Vector3(barX * 0.5f, barY * 0.5f, barZ * 0.5f);
@@ -372,7 +376,7 @@ public class AnvilCrafting : MonoBehaviour
         if (condensingData == null)
         {
             condensingData = itemObj.AddComponent<CondensingData>();
-            condensingData.targetVertices = GenerateBarTargetVertices(mesh, condensingRecipe.requiredValue);
+            condensingData.targetVertices = GenerateBarTargetVertices(mesh, condensingRecipe.requiredValue, hit.collider.transform);
             Debug.Log("Generated and cached condensing target bar mesh.");
         }
 
@@ -552,5 +556,37 @@ public class AnvilCrafting : MonoBehaviour
                     break;
             }
         }
+    }
+
+    public static float CalculateMeshVolume(Mesh mesh, Transform transform = null)
+    {
+        Vector3[] vertices = mesh.vertices;
+        int[] triangles = mesh.triangles;
+
+        float volume = 0f;
+
+        for (int i = 0; i < triangles.Length; i += 3)
+        {
+            Vector3 p1 = vertices[triangles[i]];
+            Vector3 p2 = vertices[triangles[i + 1]];
+            Vector3 p3 = vertices[triangles[i + 2]];
+
+            // If object is transformed (scaled/rotated), apply it
+            if (transform != null)
+            {
+                p1 = transform.TransformPoint(p1);
+                p2 = transform.TransformPoint(p2);
+                p3 = transform.TransformPoint(p3);
+            }
+
+            volume += SignedVolumeOfTriangle(p1, p2, p3);
+        }
+
+        return Mathf.Abs(volume);
+    }
+
+    private static float SignedVolumeOfTriangle(Vector3 p1, Vector3 p2, Vector3 p3)
+    {
+        return Vector3.Dot(p1, Vector3.Cross(p2, p3)) / 6f;
     }
 }

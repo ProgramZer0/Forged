@@ -50,6 +50,9 @@ public class WorkstationScript : MonoBehaviour
     [SerializeField] private GameObject itemDefaultParents;
     [SerializeField] private float rangeInteraction = 6f;
 
+    [SerializeField] private GameObject slidersObj;
+    [SerializeField] private GameObject SliderParrent;
+
     [SerializeField] private Gui GUI;
     //[SerializeField] private SmithingCameraController EditCameraController;
 
@@ -139,7 +142,9 @@ public class WorkstationScript : MonoBehaviour
         if (inStation)
         {
             display.text = "";
-        }        
+        }
+
+        slidersObj.SetActive(anvilManger.sliderOn);
     }
     private void UseTongs()
     {
@@ -217,8 +222,21 @@ public class WorkstationScript : MonoBehaviour
         SmeltVCam.SetActive(false);
 
         AnvilEditUI.SetActive(true);
+        if(currentSmithingMode == SmithingMode.Normal)
+            SliderParrent.SetActive(true);
+        else
+            SliderParrent.SetActive(false);
         AnvilUI.SetActive(false);
         SmeltUI.SetActive(false);
+    }
+
+    public void ChangeSmithingMode(SmithingMode mode)
+    {
+        currentSmithingMode = mode;
+        if (currentSmithingMode == SmithingMode.Normal)
+            SliderParrent.SetActive(true);
+        else
+            SliderParrent.SetActive(false);
     }
 
     public bool stationCheck()

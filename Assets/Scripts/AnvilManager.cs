@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.Events;
+
 public class AnvilManager : MonoBehaviour
 {
     [Header("UI Assignments")]
@@ -24,6 +26,16 @@ public class AnvilManager : MonoBehaviour
     [SerializeField] private float minClickWaitTime = 0.2f;
     [SerializeField] private float rangeInteraction = 4f;
     [SerializeField] private LayerMask itemMask;
+
+    [Header("Helper Sliders")]
+    [SerializeField] private Slider zHelperSlider;
+    [SerializeField] private Slider yHelperSlider;
+    [SerializeField] private Slider xHelperSlider;
+    [SerializeField] private Toggle LockZToggle;
+    [SerializeField] private Toggle LockYToggle;
+    [SerializeField] private Toggle LockXToggle;
+    [SerializeField] private Toggle SliderToggle;
+
 
     [Header("Refrences")]
     [SerializeField] private TextMeshProUGUI AnvilEditModeText;
@@ -47,6 +59,10 @@ public class AnvilManager : MonoBehaviour
     private bool isClicking = false;
     private bool isMoving = false;
     private bool isDragging = false;
+    private char lockedAxis = '\0';
+    private Vector3 ratios = new Vector3(0.33f, 0.33f, 0.34f);
+
+    public bool sliderOn = true;
 
     void Start()
     {
@@ -57,6 +73,15 @@ public class AnvilManager : MonoBehaviour
         EditModeSwitch.onClick.AddListener(SwitchEditMode);
         MovePivotPoint.onClick.AddListener(SetMovingBool);
         ExitEditMode.onClick.AddListener(WS.ShowMain);
+        SliderToggle.onValueChanged.AddListener(value => OffOnSlider(value));
+        zHelperSlider.onValueChanged.AddListener(value => ZXYSliderChanged('z', value));
+        xHelperSlider.onValueChanged.AddListener(value => ZXYSliderChanged('x', value));
+        yHelperSlider.onValueChanged.AddListener(value => ZXYSliderChanged('y', value));
+        LockZToggle.onValueChanged.AddListener(value => LockSlider('z', value));
+        LockXToggle.onValueChanged.AddListener(value => LockSlider('x', value));
+        LockYToggle.onValueChanged.AddListener(value => LockSlider('y', value));
+
+
     }
 
     private void Update()
@@ -108,6 +133,7 @@ public class AnvilManager : MonoBehaviour
         }
     }
 
+
     #region Setters
     private void SetMovingBool() { isMoving = true; }
     public void SetRotator(GameObject obj) { currentRotating = obj; }
@@ -122,7 +148,79 @@ public class AnvilManager : MonoBehaviour
     #endregion
 
     #region Handle Mouse clicks and movement
+    private void ZXYSliderChanged(char axis, float value)
+    {
+        value = Mathf.Clamp01(value);
 
+        ratios = SolveRatios(ratios, axis, value);
+
+        xHelperSlider.value = GetAxis(ratios, 'x');
+        yHelperSlider.value = GetAxis(ratios, 'y');
+        zHelperSlider.value = GetAxis(ratios, 'z');
+
+    }
+    private Vector3 SolveRatios(Vector3 r, char axis, float newValue)
+    {
+        newValue = Mathf.Clamp01(newValue);
+
+        if (lockedAxis == axis)
+            return r;
+
+        float old = GetAxis(r, axis);
+        float delta = newValue - old;
+
+        r = SetAxis(r, axis, newValue);
+
+        if (lockedAxis == '\0')
+        {
+            // split evenly
+            char a1, a2;
+            GetOtherAxes(axis, out a1, out a2);
+
+            r = AddToAxis(r, a1, -delta * 0.5f);
+            r = AddToAxis(r, a2, -delta * 0.5f);
+        }
+        else
+        {
+            char free = GetFreeAxis(axis, lockedAxis);
+
+            float remaining = -delta;
+
+            float freeVal = GetAxis(r, free);
+            float newFree = Mathf.Clamp01(freeVal + remaining);
+
+            float actualDelta = newFree - freeVal;
+
+            r = SetAxis(r, free, newFree);
+
+            // if we couldn't absorb full delta  adjust main axis back
+            float leftover = remaining - actualDelta;
+            r = AddToAxis(r, axis, -leftover);
+        }
+
+        return NormalizeToOne(r);
+    }
+
+    private void LockSlider(char axis, bool isOn)
+    {
+        if (!isOn)
+        {
+            if (lockedAxis == axis)
+                lockedAxis = '\0';
+            return;
+        }
+
+        lockedAxis = axis;
+
+        LockXToggle.isOn = axis == 'x';
+        LockYToggle.isOn = axis == 'y';
+        LockZToggle.isOn = axis == 'z';
+    }
+
+    private void OffOnSlider(bool val)
+    {
+        sliderOn = val;
+    }
     private void MovePivot()
     {
         Camera cam = mainCam.GetComponent<Camera>();
@@ -514,8 +612,57 @@ public class AnvilManager : MonoBehaviour
     public Vector3 GetHammerRight() { return hammerOBJ.transform.right; }
 
     public AnvilMode GetCurrentAnvilMode() { return currentAnvilMode; }
-    public float GetXSliderHelper() { return 0; }
-    public float GetZSliderHelper() { return 0; }
-    public float GetYSliderHelper() { return 0; }
+    public float GetXSliderHelper() { return xHelperSlider.value; }
+    public float GetZSliderHelper() { return zHelperSlider.value; }
+    public float GetYSliderHelper() { return yHelperSlider.value; }
+
+    private float GetAxis(Vector3 v, char a)
+    {
+        return a switch
+        {
+            'x' => v.x,
+            'y' => v.y,
+            'z' => v.z,
+            _ => 0f
+        };
+    }
+
+    private Vector3 SetAxis(Vector3 v, char a, float value)
+    {
+        switch (a)
+        {
+            case 'x': v.x = value; break;
+            case 'y': v.y = value; break;
+            case 'z': v.z = value; break;
+        }
+        return v;
+    }
+    private Vector3 AddToAxis(Vector3 v, char a, float delta)
+    {
+        float value = GetAxis(v, a) + delta;
+        value = Mathf.Clamp01(value);
+        return SetAxis(v, a, value);
+    }
+    private void GetOtherAxes(char changed, out char a1, out char a2)
+    {
+        if (changed == 'x') { a1 = 'y'; a2 = 'z'; }
+        else if (changed == 'y') { a1 = 'x'; a2 = 'z'; }
+        else { a1 = 'x'; a2 = 'y'; }
+    }
+    private char GetFreeAxis(char changed, char locked)
+    {
+        if (changed != 'x' && locked != 'x') return 'x';
+        if (changed != 'y' && locked != 'y') return 'y';
+        return 'z';
+    }
+    private Vector3 NormalizeToOne(Vector3 v)
+    {
+        float sum = v.x + v.y + v.z;
+
+        if (sum <= 0.0001f)
+            return new Vector3(0.33f, 0.33f, 0.34f);
+
+        return v / sum;
+    }
     #endregion
 }
