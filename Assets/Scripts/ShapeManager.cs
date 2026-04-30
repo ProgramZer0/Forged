@@ -94,7 +94,7 @@ public class ShapeManager : MonoBehaviour
 
         // Measure volume once before anything runs.
         // We enforce this exact volume at the end regardless of which path ran.
-        float volumeBefore = CalculateMeshVolume(deformingMesh, transform);
+        float volumeBefore = CalculateMeshVolume(deformingMesh, null);
 
         Debug.Log("volume before change " + volumeBefore);
 
@@ -127,7 +127,7 @@ public class ShapeManager : MonoBehaviour
         deformingMesh.RecalculateNormals();
         deformingMesh.RecalculateBounds();
 
-        float volumeAfter = CalculateMeshVolume(deformingMesh, transform);
+        float volumeAfter = CalculateMeshVolume(deformingMesh, null);
 
         Debug.Log("volume after change " + volumeAfter);
 
@@ -236,6 +236,9 @@ public class ShapeManager : MonoBehaviour
     // the actual mesh volume and ratios that always sum to 1.
     private void ApplyNormalAssist(float currentVol, float force)
     {
+        currentVol = currentVol * 1.037f;
+        Bounds b = deformingMesh.bounds;
+
         if (anvilMgr == null) return;
 
         float ratiox = anvilMgr.GetXSliderHelper();
@@ -312,29 +315,37 @@ public class ShapeManager : MonoBehaviour
 
         // Derive new dimensions from lerped ratios + current volume.
         // Volume is guaranteed by construction — same formula as before.
+        Debug.Log("x:" + newRatioX + ", "+ "y:" + newRatioY + ", " +"z:" + newRatioZ + ", together:" + (newRatioX+ newRatioY+newRatioZ));
         float scaleProduct = newRatioX * newRatioY * newRatioZ;
         if (scaleProduct <= 0f) return;
 
         float k = Mathf.Pow(currentVol / scaleProduct, 1f / 3f);
-        Vector3 newDims = new Vector3(newRatioX * k, newRatioY * k, newRatioZ * k);
 
-        // Remap every vertex from current bounds to new bounds.
+        float barX = newRatioX * k;
+        float barY = newRatioY * k;
+        float barZ = newRatioZ * k;
+
+        Vector3 center = currentCenter;
+
         for (int i = 0; i < vertices.Length; i++)
         {
             Vector3 v = vertices[i];
 
+            // Normalized position within current bounds (-0.5 to 0.5 per axis).
             Vector3 normalized = new Vector3(
                 (v.x - currentCenter.x) / current.x,
                 (v.y - currentCenter.y) / current.y,
                 (v.z - currentCenter.z) / current.z
             );
 
+            // Place vertex at same normalized position within new dimensions.
             vertices[i] = new Vector3(
-                currentCenter.x + normalized.x * newDims.x,
-                currentCenter.y + normalized.y * newDims.y,
-                currentCenter.z + normalized.z * newDims.z
+                center.x + normalized.x * barX,
+                center.y + normalized.y * barY,
+                center.z + normalized.z * barZ
             );
         }
+
     }
     // -------------------------------------------------------------------------
     // Volume
