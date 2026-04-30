@@ -94,14 +94,16 @@ public class ShapeManager : MonoBehaviour
 
         // Measure volume once before anything runs.
         // We enforce this exact volume at the end regardless of which path ran.
-        float volumeBefore = CalculateVolumeFromVertices(vertices, deformingMesh.triangles, transform);
+        float volumeBefore = CalculateMeshVolume(deformingMesh, transform);
+
+        Debug.Log("volume before change " + volumeBefore);
 
         Vector3 localHit = transform.InverseTransformPoint(hit.point);
 
         if (currentMode == SmithingMode.Normal && anvilMgr.sliderOn)
         {
             // Normal mode with slider: nudge all vertices toward target shape.
-            ApplyNormalAssist(localHit, force);
+            ApplyNormalAssist(volumeBefore, force);
         }
         else
         {
@@ -121,8 +123,15 @@ public class ShapeManager : MonoBehaviour
 
         // Enforce volume after whichever path ran.
         // Corrects any loss from anvil clamping or floating point drift.
-        float volumeAfter = CalculateVolumeFromVertices(vertices, deformingMesh.triangles, transform);
+        deformingMesh.vertices = vertices;
+        deformingMesh.RecalculateNormals();
+        deformingMesh.RecalculateBounds();
 
+        float volumeAfter = CalculateMeshVolume(deformingMesh, transform);
+
+        Debug.Log("volume after change " + volumeAfter);
+
+        /*
         if (volumeAfter > 0.0001f && volumeBefore > 0.0001f)
         {
             float correction = Mathf.Pow(volumeBefore / volumeAfter, 1f / 3f);
@@ -138,11 +147,9 @@ public class ShapeManager : MonoBehaviour
                     vertices[i] = ClampToAnvil(vertices[i], corrected);
                 }
             }
-        }
+        }*/
 
-        deformingMesh.vertices = vertices;
-        deformingMesh.RecalculateNormals();
-        deformingMesh.RecalculateBounds();
+
 
         // Update mesh collider so thickness raycasts are accurate next hit.
         MeshCollider mc = GetComponentInChildren<MeshCollider>();
@@ -227,24 +234,17 @@ public class ShapeManager : MonoBehaviour
     // Nudges ALL vertices toward the target shape every hit, regardless of where
     // the hammer landed. Volume is conserved because the target is derived from
     // the actual mesh volume and ratios that always sum to 1.
-    private void ApplyNormalAssist(Vector3 localHit, float force)
+    private void ApplyNormalAssist(float currentVol, float force)
     {
         if (anvilMgr == null) return;
 
-        float rx = anvilMgr.GetXSliderHelper();
-        float ry = anvilMgr.GetYSliderHelper();
-        float rz = anvilMgr.GetZSliderHelper();
+        float ratiox = anvilMgr.GetXSliderHelper();
+        float ratioy = anvilMgr.GetYSliderHelper();
+        float ratioz = anvilMgr.GetZSliderHelper();
 
-        float volume = CalculateMeshVolume(deformingMesh, transform);
-        if (volume <= 0f) return;
+        if (ratiox <= 0f || ratioy <= 0f || ratioz <= 0f) return;
 
-        float ratioProduct = rx * ry * rz;
-        if (ratioProduct <= 0f) return;
-
-        float k = Mathf.Pow(volume / ratioProduct, 1f / 3f);
-        Vector3 target = new Vector3(rx * k, ry * k, rz * k);
-
-        // Get current bounds min/max so we can remap proportionally.
+        // Current bounds.
         Vector3 min = vertices[0];
         Vector3 max = vertices[0];
         for (int i = 1; i < vertices.Length; i++)
@@ -252,55 +252,108 @@ public class ShapeManager : MonoBehaviour
             min = Vector3.Min(min, vertices[i]);
             max = Vector3.Max(max, vertices[i]);
         }
-
         Vector3 current = max - min;
         Vector3 currentCenter = (min + max) * 0.5f;
 
-        // How far to move this hit — lerp fraction driven by force and assist strength.
-        // Small value so it feels like gradual progress, not an instant snap.
-        float lerpT = assistStrength * force * 0.05f;
-        lerpT = Mathf.Clamp01(lerpT);
+        if (current.x < 0.0001f || current.y < 0.0001f || current.z < 0.0001f) return;
 
+        // Convert current dimensions into ratios by normalizing so they sum to 1.
+        // This puts current shape and target shape in the same space for lerping.
+        float dimSum = current.x + current.y + current.z;
+        float currentRatioX = current.x / dimSum;
+        float currentRatioY = current.y / dimSum;
+        float currentRatioZ = current.z / dimSum;
+
+        // How far to move ratios this hit — small so it feels gradual.
+        float lerpT = Mathf.Clamp01(assistStrength * force * 0.05f);
+
+        // Lerp current ratios toward target ratios.
+        // This is what moves — not the dimensions directly.
+        float newRatioX = Mathf.Lerp(currentRatioX, ratiox, lerpT);
+        float newRatioY = Mathf.Lerp(currentRatioY, ratioy, lerpT);
+        float newRatioZ = Mathf.Lerp(currentRatioZ, ratioz, lerpT);
+
+        // Find which axis changed the most — that one is the primary and stays fixed.
+        float changeX = Mathf.Abs(newRatioX - currentRatioX);
+        float changeY = Mathf.Abs(newRatioY - currentRatioY);
+        float changeZ = Mathf.Abs(newRatioZ - currentRatioZ);
+
+        if (changeX >= changeY && changeX >= changeZ)
+        {
+            // X is primary — scale Y and Z down to fill the remainder.
+            float remainder = 1f - newRatioX;
+            float otherSum = newRatioY + newRatioZ;
+            if (otherSum > 0.0001f)
+            {
+                newRatioY = newRatioY / otherSum * remainder;
+                newRatioZ = newRatioZ / otherSum * remainder;
+            }
+        }
+        else if (changeY >= changeX && changeY >= changeZ)
+        {
+            float remainder = 1f - newRatioY;
+            float otherSum = newRatioX + newRatioZ;
+            if (otherSum > 0.0001f)
+            {
+                newRatioX = newRatioX / otherSum * remainder;
+                newRatioZ = newRatioZ / otherSum * remainder;
+            }
+        }
+        else
+        {
+            float remainder = 1f - newRatioZ;
+            float otherSum = newRatioX + newRatioY;
+            if (otherSum > 0.0001f)
+            {
+                newRatioX = newRatioX / otherSum * remainder;
+                newRatioY = newRatioY / otherSum * remainder;
+            }
+        }
+
+        // Derive new dimensions from lerped ratios + current volume.
+        // Volume is guaranteed by construction — same formula as before.
+        float scaleProduct = newRatioX * newRatioY * newRatioZ;
+        if (scaleProduct <= 0f) return;
+
+        float k = Mathf.Pow(currentVol / scaleProduct, 1f / 3f);
+        Vector3 newDims = new Vector3(newRatioX * k, newRatioY * k, newRatioZ * k);
+
+        // Remap every vertex from current bounds to new bounds.
         for (int i = 0; i < vertices.Length; i++)
         {
-            // No weldMap check needed — process every vertex directly.
             Vector3 v = vertices[i];
 
             Vector3 normalized = new Vector3(
-                current.x > 0.0001f ? (v.x - currentCenter.x) / current.x : 0f,
-                current.y > 0.0001f ? (v.y - currentCenter.y) / current.y : 0f,
-                current.z > 0.0001f ? (v.z - currentCenter.z) / current.z : 0f
+                (v.x - currentCenter.x) / current.x,
+                (v.y - currentCenter.y) / current.y,
+                (v.z - currentCenter.z) / current.z
             );
 
-            Vector3 targetPos = new Vector3(
-                currentCenter.x + normalized.x * target.x,
-                currentCenter.y + normalized.y * target.y,
-                currentCenter.z + normalized.z * target.z
+            vertices[i] = new Vector3(
+                currentCenter.x + normalized.x * newDims.x,
+                currentCenter.y + normalized.y * newDims.y,
+                currentCenter.z + normalized.z * newDims.z
             );
-
-            Vector3 candidate = Vector3.Lerp(v, targetPos, lerpT);
-            candidate = ClampToAnvil(v, candidate);
-
-            // Set directly — no weld twin lookup needed since every vertex is processed.
-            vertices[i] = candidate;
         }
     }
     // -------------------------------------------------------------------------
     // Volume
     // -------------------------------------------------------------------------
 
-    // Calculates volume directly from a vertex array without needing to assign
-    // it to the mesh first. Used mid-deformation to avoid a temporary mesh write.
-    private static float CalculateVolumeFromVertices(Vector3[] verts, int[] triangles, Transform transform)
+    public static float CalculateMeshVolume(Mesh mesh, Transform transform = null)
     {
+        Vector3[] vertices = mesh.vertices;
+        int[] triangles = mesh.triangles;
+
         float volume = 0f;
 
         for (int i = 0; i < triangles.Length; i += 3)
         {
-            Vector3 p1 = verts[triangles[i]];
-            Vector3 p2 = verts[triangles[i + 1]];
-            Vector3 p3 = verts[triangles[i + 2]];
+            Vector3 p1 = vertices[triangles[i]];
+            Vector3 p2 = vertices[triangles[i + 1]];
+            Vector3 p3 = vertices[triangles[i + 2]];
 
+            // If object is transformed (scaled/rotated), apply it
             if (transform != null)
             {
                 p1 = transform.TransformPoint(p1);
@@ -308,16 +361,15 @@ public class ShapeManager : MonoBehaviour
                 p3 = transform.TransformPoint(p3);
             }
 
-            volume += Vector3.Dot(p1, Vector3.Cross(p2, p3)) / 6f;
+            volume += SignedVolumeOfTriangle(p1, p2, p3);
         }
 
         return Mathf.Abs(volume);
     }
 
-    // Public version that takes a mesh directly  used by NormalAssist and external callers.
-    public static float CalculateMeshVolume(Mesh mesh, Transform transform = null)
+    private static float SignedVolumeOfTriangle(Vector3 p1, Vector3 p2, Vector3 p3)
     {
-        return CalculateVolumeFromVertices(mesh.vertices, mesh.triangles, transform);
+        return Vector3.Dot(p1, Vector3.Cross(p2, p3)) / 6f;
     }
 
     // -------------------------------------------------------------------------
