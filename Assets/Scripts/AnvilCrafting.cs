@@ -113,6 +113,8 @@ public class AnvilCrafting : MonoBehaviour
                 {
                     if (condensingRecipe != null)
                     {
+                        Debug.Log("condensing recipe exists");
+
                         Recipe heatingRecipe = recipeManager.FindRecipe(PhaseType.Heating, itemScriptOnAnvil.itemID);
                         if (heatingRecipe != null)
                         {

@@ -81,74 +81,61 @@ public class ShapeManager : MonoBehaviour
     // -------------------------------------------------------------------------
 
     public void OnHammerHit(
-        RaycastHit hit,
-        float force,
-        AnvilMode hammerType,
-        SmithingMode currentMode,
-        bool autoStraighten,
-        Vector3 hammerRightWorld,
-        Collider _anvilCollider)
+    RaycastHit hit,
+    float force,
+    AnvilMode hammerType,
+    SmithingMode currentMode,
+    bool autoStraighten,
+    Vector3 hammerRightWorld,
+    Collider _anvilCollider)
     {
         anvilCollider = _anvilCollider;
         vertices = deformingMesh.vertices;
+
+        // Measure volume once before anything runs.
+        // We enforce this exact volume at the end regardless of which path ran.
+        float volumeBefore = CalculateVolumeFromVertices(vertices, deformingMesh.triangles, transform);
 
         Vector3 localHit = transform.InverseTransformPoint(hit.point);
 
         if (currentMode == SmithingMode.Normal && anvilMgr.sliderOn)
         {
-            // Normal mode with slider: all vertices nudge toward target shape.
+            // Normal mode with slider: nudge all vertices toward target shape.
             ApplyNormalAssist(localHit, force);
         }
         else
         {
-            // Physical deformation: thickness-resistant compression with volume conservation.
+            // Physical deformation: thickness-resistant compression with lateral expansion.
             float thickness = MeasureThickness(hit.point, hit.normal);
 
             // Compression resists exponentially as metal gets thinner.
-            // Thick metal compresses more per hit; thin metal resists further compression.
             float maxCompress = force * 0.04f;
             float compression = maxCompress * (thickness * thickness) / (thickness * thickness + 0.01f);
 
-            // Derive lateral expansion to conserve volume for a cylinder of radius hitRadius.
-            // This is the theoretical expansion; post-deformation correction handles the residual.
+            // Lateral expansion derived from volume conservation equation.
             float newThickness = Mathf.Max(thickness - compression, 0.001f);
             float lateralExpansion = hitRadius * (Mathf.Sqrt(thickness / newThickness) - 1f);
 
-            // Measure volume before so we can correct any loss after.
-            // Calculate directly from vertex array to avoid a mesh assignment mid-method.
-            float volumeBefore = CalculateVolumeFromVertices(vertices, deformingMesh.triangles, transform);
-
             ApplyDeformation(localHit, hit.point, hit.normal, compression, lateralExpansion, hammerType, hammerRightWorld);
+        }
 
-            // Measure volume after deformation.
-            // Volume loss comes from anvil clamping preventing some vertices from moving
-            // downward, meaning the lateral expansion slightly over-compensated or under-compensated.
-            float volumeAfter = CalculateVolumeFromVertices(vertices, deformingMesh.triangles, transform);
+        // Enforce volume after whichever path ran.
+        // Corrects any loss from anvil clamping or floating point drift.
+        float volumeAfter = CalculateVolumeFromVertices(vertices, deformingMesh.triangles, transform);
 
-            // Correct volume by scaling all vertices outward from the current mesh center.
-            // We use the current center (recalculated from live vertices) not the cached original,
-            // because the mesh may have shifted significantly over many hits.
-            if (volumeAfter > 0.0001f && volumeBefore > 0.0001f)
+        if (volumeAfter > 0.0001f && volumeBefore > 0.0001f)
+        {
+            float correction = Mathf.Pow(volumeBefore / volumeAfter, 1f / 3f);
+
+            if (Mathf.Abs(correction - 1f) > 0.0001f)
             {
-                float volumeRatio = volumeBefore / volumeAfter;
+                Vector3 currentCenter = GetCurrentCenter();
 
-                // Volume scales as the cube of linear dimensions, so correction is cube root.
-                float correction = Mathf.Pow(volumeRatio, 1f / 3f);
-
-                // Only correct if there's a meaningful discrepancy  avoid floating point drift.
-                if (Mathf.Abs(correction - 1f) > 0.0001f)
+                for (int i = 0; i < vertices.Length; i++)
                 {
-                    Vector3 currentCenter = GetCurrentCenter();
-
-                    for (int i = 0; i < vertices.Length; i++)
-                    {
-                        Vector3 fromCenter = vertices[i] - currentCenter;
-                        Vector3 corrected = currentCenter + fromCenter * correction;
-
-                        // Clamp corrected position against anvil  scaling outward could
-                        // push bottom vertices below the surface.
-                        vertices[i] = ClampToAnvil(vertices[i], corrected);
-                    }
+                    Vector3 fromCenter = vertices[i] - currentCenter;
+                    Vector3 corrected = currentCenter + fromCenter * correction;
+                    vertices[i] = ClampToAnvil(vertices[i], corrected);
                 }
             }
         }
@@ -248,52 +235,56 @@ public class ShapeManager : MonoBehaviour
         float ry = anvilMgr.GetYSliderHelper();
         float rz = anvilMgr.GetZSliderHelper();
 
-        // Real mesh volume  more accurate than bounding box for any non-box shape.
         float volume = CalculateMeshVolume(deformingMesh, transform);
         if (volume <= 0f) return;
 
-        Vector3 current = GetCurrentDimensions();
-
-        // Derive target dimensions from ratios and real volume.
         float ratioProduct = rx * ry * rz;
         if (ratioProduct <= 0f) return;
 
         float k = Mathf.Pow(volume / ratioProduct, 1f / 3f);
         Vector3 target = new Vector3(rx * k, ry * k, rz * k);
-        Vector3 error = target - current;
 
-        float nudgeScale = assistStrength * force * 0.04f;
+        // Get current bounds min/max so we can remap proportionally.
+        Vector3 min = vertices[0];
+        Vector3 max = vertices[0];
+        for (int i = 1; i < vertices.Length; i++)
+        {
+            min = Vector3.Min(min, vertices[i]);
+            max = Vector3.Max(max, vertices[i]);
+        }
+
+        Vector3 current = max - min;
+        Vector3 currentCenter = (min + max) * 0.5f;
+
+        // How far to move this hit — lerp fraction driven by force and assist strength.
+        // Small value so it feels like gradual progress, not an instant snap.
+        float lerpT = assistStrength * force * 0.05f;
+        lerpT = Mathf.Clamp01(lerpT);
 
         for (int i = 0; i < vertices.Length; i++)
         {
-            if (weldMap[i] != i) continue;
-
+            // No weldMap check needed — process every vertex directly.
             Vector3 v = vertices[i];
-            Vector3 fromCenter = v - cachedMeshCenter;
-            Vector3 delta = Vector3.zero;
 
-            // Push each axis outward or inward based on error.
-            // Vertices near center barely move  edges are where shape manifests.
-            if (Mathf.Abs(fromCenter.x) > 0.001f)
-                delta.x = Mathf.Sign(fromCenter.x) * error.x * nudgeScale;
+            Vector3 normalized = new Vector3(
+                current.x > 0.0001f ? (v.x - currentCenter.x) / current.x : 0f,
+                current.y > 0.0001f ? (v.y - currentCenter.y) / current.y : 0f,
+                current.z > 0.0001f ? (v.z - currentCenter.z) / current.z : 0f
+            );
 
-            if (Mathf.Abs(fromCenter.y) > 0.001f)
-                delta.y = Mathf.Sign(fromCenter.y) * error.y * nudgeScale;
+            Vector3 targetPos = new Vector3(
+                currentCenter.x + normalized.x * target.x,
+                currentCenter.y + normalized.y * target.y,
+                currentCenter.z + normalized.z * target.z
+            );
 
-            if (Mathf.Abs(fromCenter.z) > 0.001f)
-                delta.z = Mathf.Sign(fromCenter.z) * error.z * nudgeScale;
+            Vector3 candidate = Vector3.Lerp(v, targetPos, lerpT);
+            candidate = ClampToAnvil(v, candidate);
 
-            delta = Vector3.ClampMagnitude(delta, 0.02f);
-
-            if (delta.sqrMagnitude < 0.000001f) continue;
-
-            Vector3 candidate = ClampToAnvil(v, v + delta);
-
-            // Pass mesh center so all vertices qualify for the weld twin check.
-            ApplyWeldedDelta(i, candidate - v, cachedMeshCenter);
+            // Set directly — no weld twin lookup needed since every vertex is processed.
+            vertices[i] = candidate;
         }
     }
-
     // -------------------------------------------------------------------------
     // Volume
     // -------------------------------------------------------------------------

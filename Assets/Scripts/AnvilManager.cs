@@ -62,7 +62,7 @@ public class AnvilManager : MonoBehaviour
     private char lockedAxis = '\0';
     private Vector3 ratios = new Vector3(0.33f, 0.33f, 0.34f);
 
-    public bool sliderOn = true;
+    public bool sliderOn = false;
 
     void Start()
     {
@@ -133,10 +133,14 @@ public class AnvilManager : MonoBehaviour
         }
     }
 
-
     #region Setters
     private void SetMovingBool() { isMoving = true; }
-    public void SetRotator(GameObject obj) { currentRotating = obj; }
+    public void SetRotator(GameObject obj)
+    {
+        if (obj != currentRotating)
+            currentAxisIndex = 0;
+        currentRotating = obj;
+    }
     public void SetAnvilViewType(AnvilMode mode) { currentAnvilMode = mode; }
     public void SetGravity(bool value, GameObject obj)
     {
@@ -524,34 +528,25 @@ public class AnvilManager : MonoBehaviour
     #endregion
 
     #region Rotaing
-
-    private void InitializeAxes(GameObject obj)
-    {
-        if (obj == null) return;
-
-        localAxes[0] = obj.transform.up;
-        localAxes[1] = obj.transform.right;
-        localAxes[2] = obj.transform.forward;
-
-        currentAxisIndex = 0;
-        currentRotateAxis = localAxes[currentAxisIndex];
-    }
-
     // Call this on "Change Axis" button
     public void ChangeAxis()
     {
-        if (localAxes == null) return;
-        currentAxisIndex = (currentAxisIndex + 1) % localAxes.Length;
-        currentRotateAxis = localAxes[currentAxisIndex];
+        currentAxisIndex = (currentAxisIndex + 1) % 3;
     }
 
-    // Call this on "Rotate Side" button
     public void RotateSide()
     {
-
         if (currentRotating == null) return;
 
-        Quaternion rotation = Quaternion.AngleAxis(90f, currentRotateAxis);
+        Vector3 axis = currentAxisIndex switch
+        {
+            0 => Vector3.up,
+            1 => Vector3.right,
+            2 => Vector3.forward,
+            _ => Vector3.up
+        };
+
+        Quaternion rotation = Quaternion.AngleAxis(90f, axis);
         currentRotating.transform.rotation = rotation * currentRotating.transform.rotation;
     }
 
