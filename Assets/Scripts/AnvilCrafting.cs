@@ -56,12 +56,17 @@ public class AnvilCrafting : MonoBehaviour
         float tempNeeded = shapingRecipe.requiredValue * 20;
         if (itemScriptOnAnvil.heatTimer < tempNeeded) return false;
 
+        Debug.Log("59");
+
+
         // Add ShapeManager if not already present
         ShapeManager sm = itemScriptOnAnvil.GetComponent<ShapeManager>();
         if (sm == null)
             sm = itemScriptOnAnvil.gameObject.AddComponent<ShapeManager>();
 
         sm.anvilCollider = anvilCollider;
+
+        Debug.Log("HIT HAMMER " + itemScriptOnAnvil.gameObject);
 
         sm.OnHammerHit(
             hit,
@@ -161,6 +166,8 @@ public class AnvilCrafting : MonoBehaviour
 
     private bool TryToGrabItem(RaycastHit hit)
     {
+        Debug.Log("164");
+
         itemScriptOnAnvil = null;
         Items item = hit.transform.GetComponent<Items>();
 
@@ -176,7 +183,10 @@ public class AnvilCrafting : MonoBehaviour
 
         if (mf != null)
         {
+            Debug.Log("making a new mesh");
             workingMesh = Instantiate(mf.mesh);
+            Debug.Log("New mesh instance ID: " + workingMesh.GetInstanceID());
+
             mf.mesh = workingMesh;
             originalHeight = workingMesh.bounds.size.y;
         }
@@ -542,6 +552,7 @@ public class AnvilCrafting : MonoBehaviour
                     if (changeFromItem.type == Itemtype.Bloom)
                     {
                         MeshFilter mf = obj.GetComponentInChildren<MeshFilter>();
+                        Debug.Log("553");
                         if (mf != null)
                         {
                             Mesh cleanMesh = GenerateCleanBarMesh(mf.mesh, 800);

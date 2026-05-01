@@ -19,6 +19,7 @@ public class ShapeManager : MonoBehaviour
     // -------------------------------------------------------------------------
 
     private Mesh deformingMesh;
+    private MeshFilter meshFilter;
     private Vector3[] vertices;
     private int[] weldMap;
     private Vector3 cachedMeshCenter;
@@ -32,7 +33,8 @@ public class ShapeManager : MonoBehaviour
 
     void Awake()
     {
-        deformingMesh = GetComponentInChildren<MeshFilter>().mesh;
+        meshFilter = GetComponentInChildren<MeshFilter>();
+        deformingMesh = meshFilter.mesh;
         vertices = deformingMesh.vertices;
         cachedMeshCenter = deformingMesh.bounds.center;
         anvilMgr = FindFirstObjectByType<AnvilManager>();
@@ -91,6 +93,9 @@ public class ShapeManager : MonoBehaviour
     Vector3 hammerRightWorld,
     Collider _anvilCollider)
     {
+
+        Debug.Log("ShapeManager mesh instance ID: " + deformingMesh.GetInstanceID());
+
         anvilCollider = _anvilCollider;
         vertices = deformingMesh.vertices;
 
@@ -152,9 +157,11 @@ public class ShapeManager : MonoBehaviour
         }*/
 
 
+        if (meshFilter != null)
+            meshFilter.mesh = deformingMesh;
 
         // Update mesh collider so thickness raycasts are accurate next hit.
-        MeshCollider mc = GetComponentInChildren<MeshCollider>();
+        MeshCollider mc = GetComponent<MeshCollider>();
         if (mc != null)
             mc.sharedMesh = deformingMesh;
     }
@@ -394,6 +401,9 @@ public class ShapeManager : MonoBehaviour
         deformingMesh.vertices = vertices;
         deformingMesh.RecalculateNormals();
         deformingMesh.RecalculateBounds();
+
+        if (meshFilter != null)
+            meshFilter.mesh = deformingMesh;
 
         MeshCollider mc = GetComponentInChildren<MeshCollider>();
         if (mc != null)
