@@ -44,6 +44,7 @@ public class AnvilCrafting : MonoBehaviour
 
     public bool HandleShapingEditor(Recipe shapingRecipe, RaycastHit hit)
     {
+        Debug.Log("shaping editor");
         if (hit.transform == null) return false;
 
         if (itemScriptOnAnvil == null)
@@ -81,6 +82,7 @@ public class AnvilCrafting : MonoBehaviour
         {
             Debug.Log("hit item " + hit.collider.gameObject.name);
 
+            TryToGrabItem(hit);
             if (itemScriptOnAnvil == null)
             {
                 Debug.Log("hit is: " + hit.transform.gameObject);
@@ -159,6 +161,7 @@ public class AnvilCrafting : MonoBehaviour
 
     private bool TryToGrabItem(RaycastHit hit)
     {
+        itemScriptOnAnvil = null;
         Items item = hit.transform.GetComponent<Items>();
 
         if (item == null)

@@ -23,6 +23,8 @@ public class ShapeManager : MonoBehaviour
     private int[] weldMap;
     private Vector3 cachedMeshCenter;
     private AnvilManager anvilMgr;
+    private bool hasBeenBoxed = false;
+
 
     // -------------------------------------------------------------------------
     // Init
@@ -236,10 +238,16 @@ public class ShapeManager : MonoBehaviour
     // the actual mesh volume and ratios that always sum to 1.
     private void ApplyNormalAssist(float currentVol, float force)
     {
-        currentVol = currentVol * 1.037f;
+        if (anvilMgr == null) return;
+
         Bounds b = deformingMesh.bounds;
 
-        if (anvilMgr == null) return;
+        if (!hasBeenBoxed)
+        {
+            SnapToBox(currentVol);
+            hasBeenBoxed = true;
+            return; // let this hit just do the snap, deform next hit
+        }
 
         float ratiox = anvilMgr.GetXSliderHelper();
         float ratioy = anvilMgr.GetYSliderHelper();
@@ -346,6 +354,50 @@ public class ShapeManager : MonoBehaviour
             );
         }
 
+    }
+
+    private void SnapToBox(float volume)
+    {
+        // Use current bounds proportions as the starting box shape.
+        Vector3 currentCenter = GetCurrentCenter();
+        Vector3 current = GetCurrentDimensions();
+
+        float dimSum = current.x + current.y + current.z;
+        float rx = current.x / dimSum;
+        float ry = current.y / dimSum;
+        float rz = current.z / dimSum;
+
+        float scaleProduct = rx * ry * rz;
+        float k = Mathf.Pow(volume / scaleProduct, 1f / 3f);
+
+        float barX = rx * k;
+        float barY = ry * k;
+        float barZ = rz * k;
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            Vector3 v = vertices[i];
+
+            Vector3 normalized = new Vector3(
+                (v.x - currentCenter.x) / current.x,
+                (v.y - currentCenter.y) / current.y,
+                (v.z - currentCenter.z) / current.z
+            );
+
+            vertices[i] = new Vector3(
+                currentCenter.x + normalized.x * barX,
+                currentCenter.y + normalized.y * barY,
+                currentCenter.z + normalized.z * barZ
+            );
+        }
+
+        deformingMesh.vertices = vertices;
+        deformingMesh.RecalculateNormals();
+        deformingMesh.RecalculateBounds();
+
+        MeshCollider mc = GetComponentInChildren<MeshCollider>();
+        if (mc != null)
+            mc.sharedMesh = deformingMesh;
     }
     // -------------------------------------------------------------------------
     // Volume
