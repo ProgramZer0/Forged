@@ -109,6 +109,7 @@ public class ShapeManager : MonoBehaviour
 
         if (currentMode == SmithingMode.Normal && anvilMgr.sliderOn)
         {
+            Debug.Log("entering normal mode");
             // Normal mode with slider: nudge all vertices toward target shape.
             ApplyNormalAssist(volumeBefore, force);
         }
@@ -251,6 +252,7 @@ public class ShapeManager : MonoBehaviour
 
         if (!hasBeenBoxed)
         {
+            Debug.Log("boxing the item to make sure volume stays the same");
             SnapToBox(currentVol);
             hasBeenBoxed = true;
             return; // let this hit just do the snap, deform next hit
@@ -368,7 +370,6 @@ public class ShapeManager : MonoBehaviour
         // Use current bounds proportions as the starting box shape.
         Vector3 currentCenter = GetCurrentCenter();
         Vector3 current = GetCurrentDimensions();
-
         float dimSum = current.x + current.y + current.z;
         float rx = current.x / dimSum;
         float ry = current.y / dimSum;
@@ -380,6 +381,7 @@ public class ShapeManager : MonoBehaviour
         float barX = rx * k;
         float barY = ry * k;
         float barZ = rz * k;
+        Debug.Log("XYZ bar + x: " + barX + " Y: " + barY + " Z: " + barZ);
 
         for (int i = 0; i < vertices.Length; i++)
         {
