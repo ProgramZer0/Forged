@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class ShapeManager : MonoBehaviour
 {
@@ -440,6 +441,95 @@ public class ShapeManager : MonoBehaviour
     // -------------------------------------------------------------------------
     // Volume
     // -------------------------------------------------------------------------
+
+    // -------------------------------------------------------------------------
+    // Texture / Smoothing
+    // -------------------------------------------------------------------------
+
+    // Smooths vertex positions via Laplacian smoothing (averaging with mesh-
+    // adjacent neighbors), keeping welded twins in sync, then rebuilds UVs
+    // using box projection based on each vertex's normal.
+    public void RedoTexturesAndSmooth(int smoothIterations = 1, float smoothStrength = 0.5f)
+    {
+        vertices = deformingMesh.vertices;
+        int[] triangles = deformingMesh.triangles;
+
+        if (smoothIterations > 0)
+        {
+            List<int>[] adjacency = new List<int>[vertices.Length];
+            for (int i = 0; i < vertices.Length; i++)
+                adjacency[i] = new List<int>();
+
+            for (int t = 0; t < triangles.Length; t += 3)
+            {
+                int a = triangles[t];
+                int b = triangles[t + 1];
+                int c = triangles[t + 2];
+                AddAdjacency(adjacency, a, b);
+                AddAdjacency(adjacency, a, c);
+                AddAdjacency(adjacency, b, c);
+            }
+
+            for (int iter = 0; iter < smoothIterations; iter++)
+            {
+                Vector3[] smoothed = (Vector3[])vertices.Clone();
+                for (int i = 0; i < vertices.Length; i++)
+                {
+                    if (adjacency[i].Count == 0) continue;
+                    Vector3 avg = Vector3.zero;
+                    foreach (int n in adjacency[i])
+                        avg += vertices[n];
+                    avg /= adjacency[i].Count;
+                    smoothed[i] = Vector3.Lerp(vertices[i], avg, smoothStrength);
+                }
+
+                // Keep welded twins together so seams don't tear apart.
+                for (int i = 0; i < vertices.Length; i++)
+                {
+                    int canonical = weldMap[i];
+                    if (canonical != i)
+                        smoothed[i] = smoothed[canonical];
+                }
+                vertices = smoothed;
+            }
+
+            deformingMesh.vertices = vertices;
+            deformingMesh.RecalculateNormals();
+            deformingMesh.RecalculateBounds();
+        }
+
+        // Box/planar UV projection based on dominant normal axis.
+        Vector3[] normals = deformingMesh.normals;
+        Bounds bounds = deformingMesh.bounds;
+        Vector2[] uvs = new Vector2[vertices.Length];
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            Vector3 n = normals[i];
+            Vector3 p = vertices[i];
+            float ax = Mathf.Abs(n.x), ay = Mathf.Abs(n.y), az = Mathf.Abs(n.z);
+
+            if (ax >= ay && ax >= az)
+                uvs[i] = new Vector2(p.z - bounds.min.z, p.y - bounds.min.y);
+            else if (ay >= ax && ay >= az)
+                uvs[i] = new Vector2(p.x - bounds.min.x, p.z - bounds.min.z);
+            else
+                uvs[i] = new Vector2(p.x - bounds.min.x, p.y - bounds.min.y);
+        }
+        deformingMesh.uv = uvs;
+
+        if (meshFilter != null)
+            meshFilter.mesh = deformingMesh;
+
+        MeshCollider mc = GetComponentInChildren<MeshCollider>();
+        if (mc != null)
+            mc.sharedMesh = deformingMesh;
+    }
+
+    private void AddAdjacency(List<int>[] adjacency, int a, int b)
+    {
+        if (!adjacency[a].Contains(b)) adjacency[a].Add(b);
+        if (!adjacency[b].Contains(a)) adjacency[b].Add(a);
+    }
 
     public static float CalculateMeshVolume(Mesh mesh, Transform transform = null)
     {
