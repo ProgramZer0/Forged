@@ -59,7 +59,7 @@ public class CheatMenu : MonoBehaviour
 
         commandDescriptions = new Dictionary<string, string>()
         {
-            { "spawn", "spawn {itemID} {pos(x,y,z) or player}" },
+            { "spawn", "spawn {itemID} {pos(x,y,z) or player} (optional: {heat=value} {condenced=value})" },
             { "teleport", "teleport {pos(x,y,z) or player}" },
             { "time", "time {set value | pause 0/1}" },
             { "player", "player set {walkSpeed, sprintSpeed, pickupRange, hp, stamina} value" },
@@ -178,6 +178,7 @@ public class CheatMenu : MonoBehaviour
 
     private void CmdSpawn(string[] args)
     {
+        
         if (args.Length < 3)
         {
             Log("Usage: spawn {itemID} {pos}");
@@ -199,7 +200,48 @@ public class CheatMenu : MonoBehaviour
             return;
         }
         
-        itemDatabase.SpawnItem(id, pos, Quaternion.identity);
+        GameObject o = itemDatabase.SpawnItem(id, pos, Quaternion.identity);
+        
+        if(args.Length >= 4)
+        {
+            bool usedArg = false;
+            for (int i=3; i < args.Length; i++)
+            {
+                usedArg = false;
+                string[] stringSplit = args[i].Split('=');
+                if(stringSplit.Length != 2)
+                {
+                    Log("missing = at parameter " + args[i] + " not adding but still spawning");
+                    break;
+                }
+                stringSplit[1] = stringSplit[1].Replace(" ", "");
+                stringSplit[0] = stringSplit[0].Replace(" ", "");
+
+                //need float as second switch
+                if (float.TryParse(stringSplit[1], out float value))
+                {
+                    switch (stringSplit[0])
+                    {
+                        case "heat":
+                            o.GetComponent<Items>().heatTimer = value;
+                            usedArg = true;
+                            break;
+                        case "condenced":
+                            o.GetComponent<Items>().condensed = value;
+                            usedArg = true;
+                            break;
+                    }
+                }
+                else
+                {
+                    Log("value " + stringSplit[1] + " is not a valid number");
+                }
+
+                if(!usedArg)
+                    Log("parameter " + stringSplit[0] + " is not a parameter");
+            } 
+        }
+
         Log($"Spawned {item.itemName}");
     }
 

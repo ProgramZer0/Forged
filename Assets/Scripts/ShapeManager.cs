@@ -85,13 +85,13 @@ public class ShapeManager : MonoBehaviour
     // -------------------------------------------------------------------------
 
     public void OnHammerHit(
-    RaycastHit hit,
-    float force,
-    AnvilMode hammerType,
-    SmithingMode currentMode,
-    bool autoStraighten,
-    Vector3 hammerRightWorld,
-    Collider _anvilCollider)
+     RaycastHit hit,
+     float force,
+     AnvilMode hammerType,
+     SmithingMode currentMode,
+     bool autoStraighten,
+     Vector3 hammerRightWorld,
+     Collider _anvilCollider)
     {
 
         Debug.Log("ShapeManager mesh instance ID: " + deformingMesh.GetInstanceID());
@@ -129,34 +129,57 @@ public class ShapeManager : MonoBehaviour
             ApplyDeformation(localHit, hit.point, hit.normal, compression, lateralExpansion, hammerType, hammerRightWorld);
         }
 
-        // Enforce volume after whichever path ran.
-        // Corrects any loss from anvil clamping or floating point drift.
+        // Push whichever path ran into the mesh so we can measure its actual volume.
         deformingMesh.vertices = vertices;
         deformingMesh.RecalculateNormals();
         deformingMesh.RecalculateBounds();
 
-        float volumeAfter = CalculateMeshVolume(deformingMesh, null);
+        float volumeAfterDeform = CalculateMeshVolume(deformingMesh, null);
 
-        Debug.Log("volume after change " + volumeAfter);
-
-        /*
-        if (volumeAfter > 0.0001f && volumeBefore > 0.0001f)
+        // Enforce volume after whichever path ran.
+        // Corrects any loss from anvil clamping, ratio-math approximation, or floating point drift.
+        // Enforce volume after whichever path ran.
+        // Corrects any loss from anvil clamping, ratio-math approximation, or floating point drift.
+        if (volumeAfterDeform > 0.0001f && volumeBefore > 0.0001f)
         {
-            float correction = Mathf.Pow(volumeBefore / volumeAfter, 1f / 3f);
+            float correction = Mathf.Pow(volumeBefore / volumeAfterDeform, 1f / 3f);
 
             if (Mathf.Abs(correction - 1f) > 0.0001f)
             {
                 Vector3 currentCenter = GetCurrentCenter();
+                Vector3 worldCenterXZ = transform.TransformPoint(currentCenter);
+
+                // Anchor the scale on the anvil surface itself, directly below center,
+                // instead of the geometric center. That way growth can only push
+                // outward/upward from a point that's already valid — never downward
+                // into the anvil.
+                float anchorWorldY = worldCenterXZ.y;
+                if (anvilCollider != null)
+                {
+                    Ray anchorRay = new Ray(worldCenterXZ + Vector3.up * 0.5f, Vector3.down);
+                    if (anvilCollider.Raycast(anchorRay, out RaycastHit anchorHit, 2f))
+                        anchorWorldY = anchorHit.point.y;
+                }
+                Vector3 anchorWorld = new Vector3(worldCenterXZ.x, anchorWorldY, worldCenterXZ.z);
 
                 for (int i = 0; i < vertices.Length; i++)
                 {
-                    Vector3 fromCenter = vertices[i] - currentCenter;
-                    Vector3 corrected = currentCenter + fromCenter * correction;
-                    vertices[i] = ClampToAnvil(vertices[i], corrected);
+                    Vector3 worldPos = transform.TransformPoint(vertices[i]);
+                    Vector3 fromAnchor = worldPos - anchorWorld;
+                    Vector3 correctedWorld = anchorWorld + fromAnchor * correction;
+                    Vector3 correctedLocal = transform.InverseTransformPoint(correctedWorld);
+                    vertices[i] = ClampToAnvil(vertices[i], correctedLocal);
                 }
-            }
-        }*/
 
+                // Re-sync the mesh with the corrected vertices.
+                deformingMesh.vertices = vertices;
+                deformingMesh.RecalculateNormals();
+                deformingMesh.RecalculateBounds();
+            }
+        }
+
+        float volumeAfter = CalculateMeshVolume(deformingMesh, null);
+        Debug.Log("volume after change " + volumeAfter);
 
         if (meshFilter != null)
             meshFilter.mesh = deformingMesh;
@@ -236,6 +259,8 @@ public class ShapeManager : MonoBehaviour
             ApplyWeldedDelta(i, candidate - localPos, localHit);
         }
     }
+
+
 
     // -------------------------------------------------------------------------
     // Normal Mode Assist
@@ -363,6 +388,7 @@ public class ShapeManager : MonoBehaviour
             );
         }
 
+        SettleOnAnvil();
     }
 
     private void SnapToBox(float volume)
@@ -450,6 +476,35 @@ public class ShapeManager : MonoBehaviour
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+
+    // Call this after ApplyNormalAssist rewrites vertices, before returning.
+    private void SettleOnAnvil()
+    {
+        if (anvilCollider == null) return;
+
+        float maxPenetration = 0f;
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            Vector3 worldPos = transform.TransformPoint(vertices[i]);
+            Ray ray = new Ray(worldPos + Vector3.up * 0.1f, Vector3.down);
+
+            if (anvilCollider.Raycast(ray, out RaycastHit hit, 0.5f))
+            {
+                float penetration = hit.point.y - worldPos.y;
+                if (penetration > maxPenetration)
+                    maxPenetration = penetration;
+            }
+        }
+
+        if (maxPenetration > 0.0001f)
+        {
+            Vector3 localUp = transform.InverseTransformDirection(Vector3.up);
+            for (int i = 0; i < vertices.Length; i++)
+                vertices[i] += localUp * maxPenetration;
+        }
+    }
 
     // Current bounding dimensions from live vertex data.
     // Used for per-axis error in the assist  not for volume calculations.
